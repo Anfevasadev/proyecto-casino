@@ -1,0 +1,23 @@
+# -------------------------------------------
+# requirements.txt
+# Función:
+#   Lista de dependencias Python del proyecto.
+#   Se instala con: pip install -r requirements.txt
+# Qué va aquí:
+#   - Paquetes necesarios para ejecutar y desarrollar.
+#   - Comentarios (#) explican por qué cada lib existe.
+# -------------------------------------------
+
+# API web (FastAPI) y servidor de desarrollo
+fastapi==0.115.0        # capa HTTP (rutas, validación)
+uvicorn[standard]==0.30.6  # servidor ASGI para correr la API
+
+# Datos
+pandas==2.2.2           # manejo de CSV/DFs, filtros y agregaciones
+
+# Modelado / validación
+pydantic==2.8.2         # modelos de entrada/salida (usado por FastAPI)
+
+# Pruebas (básico; iremos afinando)
+pytest==8.2.1           # framework de testing
+httpx==0.27.2           # cliente HTTP para pruebas si se requiere
