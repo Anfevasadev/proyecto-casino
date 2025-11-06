@@ -15,6 +15,7 @@
 #       api_router.include_router(users.router,   prefix="/v1/users",   tags=["users"])
 #       api_router.include_router(places.router,  prefix="/v1/places",  tags=["places"])
 #       api_router.include_router(machines.router,prefix="/v1/machines",tags=["machines"])
+#       Y así sucesivamente para otros recursos.
 #
 # Reglas/decisiones:
 #   - Mantener versionamiento en el path (ej.: /api/v1/*) para que futuras
