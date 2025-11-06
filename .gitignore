@@ -1,0 +1,48 @@
+# -------------------------------------------
+# .gitignore
+# Función:
+#   Indica a Git qué archivos/carpetas NO se deben versionar.
+#   Evita subir temporales, credenciales y artefactos generados.
+# Qué va aquí:
+#   - Patrones de archivos a ignorar (cachés, entornos, IDEs, etc.).
+#   - Nunca ignores /data/*.csv porque son "nuestra BD".
+# -------------------------------------------
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.build/
+dist/
+build/
+
+# Entornos virtuales / dependencias locales
+.venv/
+venv/
+.env
+.env.*
+
+# IDEs / editores
+.vscode/
+.idea/
+*.swp
+
+# SO / misceláneo
+.DS_Store
+Thumbs.db
+
+# Pruebas
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs temporales (si los usas)
+*.log
+
+# ⚠️ Importante:
+# NO ignores la carpeta data/ ni sus CSV, son parte del proyecto.
+# Puedes ignorar archivos temporales dentro de data, por ejemplo:
+data/*.tmp
+data/*_backup.csv

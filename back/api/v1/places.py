@@ -1,0 +1,59 @@
+# -------------------------------------------
+# back/api/v1/places.py
+# Propósito:
+#   Endpoints para gestionar "lugares" (casinos/salas) en CSV.
+#
+# Router esperado:
+#   - Variable "router" = APIRouter()
+#
+# Modelos (importar de back/models/places.py):
+#   - PlaceIn: name, address, is_active (por defecto true).
+#   - PlaceOut: id, name, address, is_active.
+#
+# Dependencias:
+#   - get_repos() para acceder a places_repo.
+#   - pagination_params(), filter_active_param() (opcional).
+#
+# Endpoints (sugeridos):
+#   1) GET /
+#      - Query: limit (int), offset (int), only_active (bool=true).
+#      - Procesamiento: listar lugares, filtrar activos, paginar.
+#      - Salida (200): lista PlaceOut.
+#
+#   2) GET /{place_id}
+#      - Path: place_id (int).
+#      - Procesamiento: obtener lugar por id o 404.
+#      - Salida (200): PlaceOut.
+#
+#   3) POST /
+#      - Body: PlaceIn.
+#      - Validaciones:
+#         * name no repetido.
+#      - Procesamiento: asignar id, guardar.
+#      - Salida (201): PlaceOut.
+#      - Errores: 400 si nombre duplicado.
+#
+#   4) PUT /{place_id}
+#      - Body: campos editables (name, address, is_active).
+#      - Validaciones: que place_id exista; no duplicar name.
+#      - Procesamiento: actualizar fila.
+#      - Salida (200): PlaceOut actualizado.
+#      - Errores: 404/400.
+#
+#   5) DELETE /{place_id}
+#      - Borrado lógico:
+#         * Política del proyecto: en places NO hay is_deleted, solo is_active.
+#         * "Eliminar" = is_active=false (no borrar la fila).
+#      - Validaciones: place_id existente.
+#      - Procesamiento: marcar is_active=false.
+#      - Salida (200): {"deleted": true, "id": <place_id>}
+#
+# Reglas adicionales:
+#   - Si un lugar se desactiva (is_active=false), considerar (a nivel de dominio)
+#     bloquear creación de nuevas máquinas asociadas (machines.place_id).
+#     Esta comprobación NO va aquí; va en la capa domain/ o en repos.
+#
+# Librerías:
+#   - fastapi (APIRouter, HTTPException, status)
+#   - pydantic (modelos)
+# -------------------------------------------
