@@ -26,10 +26,10 @@
 # Convenciones:
 #   - No colocar lógica de negocio aquí.
 #   - Mantener el archivo simple para que el equipo arranque Uvicorn sin confusión:
-#       uvicorn back.main:app --reload
 #
 # Notas:
 #   - La API trabaja con datos en CSV dentro de /data (hora local).
-#   - Si en el futuro se agregan "eventos" de inicio (startup) para preparar rutas
 #     u otro setup, documentarlo aquí con claridad (pero mantenerlo mínimo por ser académico).
 # ----------------------------------------
+
+Print("Hola muchachos esto es una prueba")
