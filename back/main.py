@@ -32,4 +32,9 @@
 #     u otro setup, documentarlo aquí con claridad (pero mantenerlo mínimo por ser académico).
 # ----------------------------------------
 
+
+from fastapi import FastAPI
+
+from api.router import api_router
+
 Print("Hola muchachos esto es una prueba")

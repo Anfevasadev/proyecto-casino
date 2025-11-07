@@ -26,3 +26,9 @@
 #   - No incluir secretos ni credenciales.
 #   - Evitar leer variables de entorno para mantenerlo simple (académico).
 # -------------------------------------------
+
+
+
+print("Configuraciones cargadas correctamente.")
+from pathlib import Path
+from datetime import datetime
