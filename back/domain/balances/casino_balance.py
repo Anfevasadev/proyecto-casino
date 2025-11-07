@@ -50,7 +50,6 @@
 #
 # Errores:
 #   - NotFoundError para place inexistente/inactivo.
-#   - ValueError por periodo inválido.
 #   - LockedError si el balance del periodo está bloqueado.
 #
 # Notas:

@@ -6,7 +6,6 @@
 #     y montar el router principal de la API (back/api/router.py) bajo /api.
 #
 # Librerías a usar:
-#   - from fastapi import FastAPI
 #   - (Opcional) from fastapi.middleware.cors import CORSMiddleware, si el front requiere CORS
 #   - from api.router import api_router
 #
@@ -33,3 +32,5 @@
 #   - Si en el futuro se agregan "eventos" de inicio (startup) para preparar rutas
 #     u otro setup, documentarlo aquí con claridad (pero mantenerlo mínimo por ser académico).
 # ----------------------------------------
+from fastapi import FastAPI
+from api.router import api_router
