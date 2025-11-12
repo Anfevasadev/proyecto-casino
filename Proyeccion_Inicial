@@ -1,0 +1,38 @@
+# Plan de trabajo QA - Proyecto Casino
+## - Objetivo
+Definir y analizar el cuadre del casino con las funciones y el buen funcionamiento del sistema del casino, cumpliendo con los requisitos funcionales y de la estructura.
+
+## Estructura esperada
+Este plan de trabajo cubre:
+- Registro de los usuarios y el login (movimientos)
+- Area de tipo de juegos
+- Sistema de puntos
+- Ingresos (Montos de dinero manejados)
+- Egresos (Balance general despues de todos los movimientos hechos)
+
+## Tipos de pruebas
+- Pruebas unitarias o pruebas funcionales
+
+## Requisitos esperados
+- Estructura del registro del usuario con usuario y contraseña y que se muestre que se ha creado con exito.
+- Inicio de sesion con las credenciales correctas, dirigir despues al casino.
+- Sistema de economia (Cambio de moneda, no poder jugar sin saldo, no poder quedar en saldo negativo).
+- Tiempo de carga de los juegos disponibles (Adicional una carga fluida en la api).
+- Sistema de juegos disponibles.
+
+## Criterios de aceptacion
+- Los casos de prueba pasen con exito los tests
+- Ningun error o bug
+- Dinamidad y usabilidad de la api (tanto en back como en front)
+- Integridad y seguridad de los datos
+- Trazabilidad de los registros monetarios
+
+## Herramientas
+- Lenguajes: Python/Java
+- Repositorio: GitHub
+- Front variable
+
+## Entregables
+- Reporte de los resultados de las pruebas
+- Registro de bugs encontrados
+- Informe final semanal de validacion QA - Tester
