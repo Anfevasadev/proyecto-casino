@@ -92,3 +92,16 @@ pytest
 * Si no sabes dónde poner algo: **API** (rutas), **domain** (reglas/operaciones), **storage** (CSV/pandas).
 * Mantén funciones pequeñas y comentadas.
 * Si un archivo te abruma, divídelo (pero evita sobre-arquitectura).
+
+
+##  LOGIN
+
+El proceso de autenticación o login se realiza mediante el siguiente endpoint:
+
+### POST /api/v1/login
+
+Este endpoint recibe las credenciales o datos del usuario y retorna un token o la información básica si son válidas y el usuario está activo.
+
+|    Campo   | Tipo  |       Descripción       |
+| `username` | `str` | Nombre de usuario.      |
+| `password` | `str` | Contraseña del usuario. |
