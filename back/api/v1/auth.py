@@ -13,7 +13,7 @@ router = APIRouter()
     "/login", 
     response_model=LoginOut,
     status_code=200, #Si el inicio fue exitoso, se devolverá el codigo 200 
-    detalle="Endpoint de Autenticación de Usuario"
+    description="Endpoint de Autenticación de Usuario"
 )
 async def login(user_data: LoginIn): #  Recibe las credenciales, las valida usando la lógica de dominio y retorna la información básica del usuario si son correctas y está activo.
 
