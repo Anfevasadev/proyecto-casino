@@ -37,3 +37,97 @@ Este plan de trabajo cubre:
 - Reporte de los resultados de las pruebas
 - Registro de bugs encontrados
 - Informe final semanal de validacion QA - Tester
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+#test_health.py
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+#Propósito: Verificar que la aplicación arranque y que el endpoint de salud responda correctamente.
+
+## GET/health: ruta raíz de salud (sin prefijo /api).
+ - Entrada: ninguna.
+ - Proceso: petición HTTP GET a /health usando TestClient (en tests).
+ - Salida esperada:
+   - status_code: 200.
+   - Cuerpo JSON con al menos {"status": "ok"}.
+
+## GET /api/v1/health: ruta de salud de la API versionada (si está montada).
+ - Entrada: ninguna.
+ - Salida esperada:
+   - status_code: 200.
+   - JSON con {"status": "ok", "version": "v1"} o similar.
+
+## Consideraciones importantes:
+
+ - El test NO debe tocar los CSV en data; debe pasar con o sin datos.
+ - Evitar dependencias externas y sleep en los tests para mantenerlos deterministas y rápidos.
+ - Diseñado para correr en entorno local / CI sin servicios adicionales.
+
+## Ubicación del test:
+
+Archivo: test_health.py
+ - Descripción: Test de health para comprobar arranque y endpoints básicos.
+ - Ficheros: test_health.py
+
+## Ejecución:
+ - Instala dependencias: pip install -r [requirements.txt](http://_vscodecontentref_/4)
+ - Ejecuta solo el test de salud: pytest [test_health.py](http://_vscodecontentref_/5) -q
+ - Ejecuta toda la suite de tests:pytest -q
+
+# Resultado esperado:
+ - pytest debe devolver exit code 0.
+ - Salida del test: el caso para /health y, si existe, /api/v1/health pasan con status 200 y JSON correcto.
+
+Sugerencias para CI:
+
+ - Incluir pytest -q en la etapa de test.
+ - No montar servicios externos para este test; si más adelante se añaden tests de integración, aislarlos en otra etiqueta (integration) y ejecutarlos separadamente.
+ - Añadir un job que ejecute linters y pytest para PRs.
+
+¿Quieres que añada esta sección directamente en un archivo README.md o en Proyeccion_Inicial/INICIAR.md dentro del repo? También puedo crear el fragmento ya formateado en Markdown y aplicarlo al repo. - Resultado esperado:
+- pytest debe devolver exit code 0.
+- Salida del test: el caso para /health y, si existe, /api/v1/health pasan con status 200 y JSON correcto.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+test_users_min
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+# Propósito: Documentar los tests mínimos de usuarios para validar creación y listado sin tocar datos de producción.
+Archivo
+
+## Objetivo
+ - Meta: Verificar el flujo mínimo de usuarios (crear y listar) de forma aislada y reproducible, usando CSVs temporales o rutas mockeadas para evitar modificar data.
+
+# Preparación
+
+## Repos aislados: Asegurar que los repositorios en storage apunten a CSVs de prueba.
+## Opciones:
+ - Temporal dir: Usar tmpdir / TemporaryDirectory y copiar solo los encabezados CSV necesarios.
+ - Mock rutas: Mockear csv_paths.py para que devuelva rutas dentro del tmp.
+## Limpieza: Limpiar o recrear los CSVs de prueba entre tests para evitar contaminación.
+
+# Casos mínimos a cubrir
+
+## 1) Crear usuario feliz:
+ - Método / Ruta: POST /api/v1/users/
+ - Entrada (JSON): {"username":"ana","password":"123","role":"operador"}
+## Validaciones esperadas:
+   - username no vacío.
+   - role dentro de los permitidos por la aplicación.
+ ## Salida esperada:
+ - status_code: 201
+ - JSON: campos públicos id, username, role, is_active (True por defecto).
+ - No exponer password.
+
+## 2) Listar usuarios:
+ - Método / Ruta: GET /api/v1/users/
+ - Entrada: ninguna (o limit/offset simples).
+ - Salida esperada:
+   - status_code: 200
+   - JSON: lista que contiene al menos el usuario creado en (1).
+
+## 3) Username duplicado:
+ - Método / Ruta: POST /api/v1/users/ (mismo username)
+ - Salida esperada:
+   - status_code: 400 (o el código acordado en el proyecto).
+   - JSON: mensaje de error indicando duplicidad.
+
