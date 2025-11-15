@@ -1,5 +1,6 @@
 import pandas as pd
 from typing import Optional, Dict, Any
+from pathlib import Path
 
 RUTA_DATOS = "data/users.csv"
 
@@ -24,3 +25,20 @@ def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:  #Buscamos 
     except Exception as e:
         print(f"Error al leer el repositorio de usuarios: {e}")
         return None
+CSV_PATH = Path("data/users.csv")
+def load_users():
+    if CSV_PATH.exists():
+        return pd.read_csv(CSV_PATH)
+    return pd.DataFrame(columns = ["username", "password", "role", "is_active", "created_at", "created_by"])
+def save_users(df):
+    df.to_csv(CSV_PATH, index = False)
+def username_exists(username: str):
+    df = load_users()
+    return username in df["username"].values
+def insert_user(user_dict: dict):
+    df = load_users()
+
+    if user_dict["username"] in df["username"].values:
+        raise ValueError("Username ya existe")
+    df = pd.concat([df, pd.DataFrame([user_dict])], ignore_index= True)
+    save_users(df)    

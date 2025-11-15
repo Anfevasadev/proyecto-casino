@@ -32,3 +32,23 @@
 #   - Username duplicado -> lanzar excepción de dominio (p.ej., ValueError o DomainError).
 #   - Role inválido -> excepción.
 # -------------------------------------------
+from datetime import datetime
+from back.storage.users_repo import insert_user, username_exists
+
+def create_user(user_in, created_by="admin"):
+    if username_exists(user_in.username):
+        raise ValueError("El username ya está en uso.")
+
+    user_dict = {
+        "username": user_in.username,
+        "password": user_in.password,
+        "role": user_in.role,
+        "is_active": user_in.is_active,
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "created_by": created_by
+    }
+
+    insert_user(user_dict)
+
+    user_dict.pop("password")  # borrar la contraseña antes de devolver
+    return user_dict
