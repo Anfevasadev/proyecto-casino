@@ -77,16 +77,6 @@ Archivo: test_health.py
  - pytest debe devolver exit code 0.
  - Salida del test: el caso para /health y, si existe, /api/v1/health pasan con status 200 y JSON correcto.
 
-Sugerencias para CI:
-
- - Incluir pytest -q en la etapa de test.
- - No montar servicios externos para este test; si más adelante se añaden tests de integración, aislarlos en otra etiqueta (integration) y ejecutarlos separadamente.
- - Añadir un job que ejecute linters y pytest para PRs.
-
-¿Quieres que añada esta sección directamente en un archivo README.md o en Proyeccion_Inicial/INICIAR.md dentro del repo? También puedo crear el fragmento ya formateado en Markdown y aplicarlo al repo. - Resultado esperado:
-- pytest debe devolver exit code 0.
-- Salida del test: el caso para /health y, si existe, /api/v1/health pasan con status 200 y JSON correcto.
-
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 test_users_min
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
