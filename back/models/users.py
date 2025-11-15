@@ -32,3 +32,18 @@
 #     a menos que se requiera explícitamente (se sugiere mantener la salida limpia).
 #   - Si se usa Enum para role, documentar su string literal para claridad en OpenAPI.
 # -------------------------------------------
+from pydantic import BaseModel, Field
+from typing import Optional
+
+class UserIn(BaseModel):
+    username: str = Field(..., min_length=3)
+    password: str = Field(..., min_length=1)
+    role: str
+    is_active: bool = True
+class UserOut(BaseModel):
+    username: str
+    role: str
+    is_active: bool
+    created_at: str
+    created_by: str
+        

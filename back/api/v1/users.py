@@ -66,3 +66,13 @@
 # Códigos de estado:
 #   - GET 200, POST 201, PUT 200, DELETE 200, 404 cuando no se encuentra, 400 por conflictos.
 # -------------------------------------------
+from fastapi import APIRouter
+from back.models.users import UserIn, UserOut
+from back.domain.users.create import create_user
+
+router = APIRouter()
+
+@router.post("/api/v1/users", response_model=UserOut)
+def create_user_endpoint(user: UserIn):
+    new_user = create_user(user, created_by="system")
+    return new_user
