@@ -94,7 +94,7 @@ pytest
 * Si un archivo te abruma, divídelo (pero evita sobre-arquitectura).
 
 
-##  LOGIN
+## LOGIN
 
 El proceso de autenticación o login se realiza mediante el siguiente endpoint:
 
@@ -102,6 +102,51 @@ El proceso de autenticación o login se realiza mediante el siguiente endpoint:
 
 Este endpoint recibe las credenciales o datos del usuario y retorna un token o la información básica si son válidas y el usuario está activo.
 
-|    Campo   | Tipo  |       Descripción       |
-| `username` | `str` | Nombre de usuario.      |
+| Campo | Tipo | Descripción |
+| :---: | :---: | :--- |
+| `username` | `str` | Nombre de usuario. |
 | `password` | `str` | Contraseña del usuario. |
+
+Respuestas de Error:
+
+* **401 Unauthorized:** Credenciales inválidas.
+* **403 Forbidden:** Usuario encontrado, pero está inactivo.
+
+---
+
+## GESTIÓN DE MÁQUINAS (CRUD)
+
+### POST /api/v1/machines (Crear Máquina)
+
+Este endpoint crea una máquina validando reglas de negocio complejas.
+
+| Validación de Negocio | Respuesta de Error |
+| :---: | :---: |
+| El `code` es único. | **409 Conflict** |
+| `place_id` existe. | **404 Not Found** |
+| `place_id` está activo. | **403 Forbidden** |
+
+### GET /api/v1/machines (Listar Máquinas)
+
+Permite listar máquinas con filtros y paginación.
+
+| Query Param | Tipo | Propósito |
+| :---: | :---: | :--- |
+| `place_id` | `int` | Filtra por el lugar. |
+| `active` | `bool` | Si es `True`, solo devuelve máquinas activas. |
+| `sort_by` | `str` | Campo de ordenamiento (`id` o `code`). |
+
+### GET /api/v1/machines/{id} (Obtener Máquina)
+
+Obtiene una máquina por ID o lanza **404 Not Found** si no existe o está desactivada.
+
+### PUT /api/v1/machines/{id} (Actualizar Máquina)
+
+Actualiza los campos suministrados. Valida unicidad de `code` y Place activo si estos campos son modificados.
+
+### DELETE /api/v1/machines/{id} (Borrado Lógico)
+
+* **Acción:** Marca la máquina como inactiva (`is_active=false`).
+* **Respuesta:** `{"deleted": true, "id": <id>}` si es exitoso.
+
+---
