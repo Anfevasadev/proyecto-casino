@@ -29,3 +29,8 @@ from fastapi import APIRouter
 from back.api.v1.auth import router as auth_router 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth_router, tags=["auth"]) 
+
+
+# Router del modulo de machines
+from back.api.v1.machines import router as machines_router
+api_router.include_router(machines_router, tags=["machines"])

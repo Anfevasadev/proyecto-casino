@@ -1,1 +1,4 @@
-id,code,denomination_value,place_id,participation_rate,is_active,created_at,created_by,updated_at,updated_by
+id,code,denomination_value,place_id,participation_rate,is_active,is_deleted,created_at,created_by,updated_at,updated_by,deleted_at,deleted_by
+1,SLOT001,1.0,1,0.95,True,False,2025-11-16 14:00:00,VelasquezDev,2025-11-16 14:00:00,VelasquezDev,,
+2,SLOT002,0.5,1,0.90,True,False,2025-11-16 14:00:00,VelasquezDev,2025-11-16 14:00:00,VelasquezDev,,
+3,SLOT999,5.0,2,0.80,False,False,2025-11-16 14:00:00,VelasquezDev,2025-11-16 14:00:00,VelasquezDev,,

@@ -1,1 +1,4 @@
 id,name,address,is_active,created_at,created_by,updated_at,updated_by
+1,Piso Principal,"Avenida Central, 101",True,2025-11-17 14:00:00,VelasquezDev,2025-11-17 14:00:00,VelasquezDev
+2,Zona VIP,"Piso 3, Sección Privada",True,2025-11-17 14:00:00,VelasquezDev,2025-11-17 14:00:00,VelasquezDev
+3,Almacén de Juegos,"Sótano 1",False,2025-11-17 14:00:00,VelasquezDev,2025-11-17 14:00:00,VelasquezDev
