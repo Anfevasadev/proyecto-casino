@@ -1,4 +1,4 @@
 id,username,password,role,is_active,is_deleted,created_at,created_by,updated_at,updated_by,deleted_at,deleted_by
-1,admin,admin,admin,True,False,2025-11-14,VelasquezDev,2025-11-14,VelasquezDev,,
+1,string,string,admin,True,False,2025-11-14,VelasquezDev,2025-11-19 03:13:14,api,,
 2,user1,pass123,player,True,False,2025-11-14,VelasquezDev,2025-11-14,VelasquezDev,,
 3,user_inactive,pass456,player,False,False,2025-11-14,VelasquezDev,2025-11-14,VelasquezDev,,
