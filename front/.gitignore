@@ -1,0 +1,43 @@
+### Dependencias
+node_modules/
+
+### Builds y artefactos
+dist/
+build/
+
+### Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+### Tests y cobertura
+coverage/
+.jest-cache/
+
+### Variables de entorno
+.env
+.env.*
+!.env.example
+
+### Cachés y temporales
+.eslintcache
+.cache/
+.parcel-cache/
+.tmp/
+*.tsbuildinfo
+
+### Archivos del SO/editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+
+### Misceláneo
+*.local
