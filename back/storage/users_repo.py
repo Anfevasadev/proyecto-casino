@@ -41,4 +41,9 @@ def insert_user(user_dict: dict):
     if user_dict["username"] in df["username"].values:
         raise ValueError("Username ya existe")
     df = pd.concat([df, pd.DataFrame([user_dict])], ignore_index= True)
-    save_users(df)    
+    save_users(df)   
+def get_next_line_number():
+    df = load_users()
+    if df.empty:
+        return 1
+    return len(df) + 1    
