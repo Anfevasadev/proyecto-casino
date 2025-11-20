@@ -34,6 +34,7 @@
 # -------------------------------------------
 from datetime import datetime
 from back.storage.users_repo import insert_user, username_exists
+from back.storage.users_repo import get_next_line_number
 
 def create_user(user_in, created_by="admin"):
     if username_exists(user_in.username):
@@ -45,7 +46,8 @@ def create_user(user_in, created_by="admin"):
         "role": user_in.role,
         "is_active": user_in.is_active,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "created_by": created_by
+        "created_by": created_by,
+        "line_number": get_next_line_number()
     }
 
     insert_user(user_dict)
