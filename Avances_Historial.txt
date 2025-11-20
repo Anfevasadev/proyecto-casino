@@ -1,0 +1,40 @@
+==========================
+HISTORIAL DE CAMBIOS
+Última semana
+==========================
+
+2025-11-20
+Fusión de la rama remota 'origin/desarrollo2' en QA
+
+2025-11-19
+Agregar número de línea al proceso de creación de usuario
+Implementar función get_next_line_number
+Agregar enrutamiento para el módulo de usuarios en el API
+Eliminar archivo package-lock.json
+Agregar archivo .gitignore y actualizar package-lock.json
+Eliminar carpeta node_modules
+
+2025-11-15
+Desarrollo front-end
+Implementación de la función para crear usuarios
+
+2025-11-14
+Fusión de la solicitud de extracción #26 desde feat/implementar-login-auth
+Corregir el parámetro 'detalle' a 'description' en el endpoint de autenticación de usuario
+Implementar la función de creación de la aplicación FastAPI y el endpoint de verificación de estado
+Implementar autenticación de usuario con endpoint de login y validación de credenciales (versión preliminar)
+
+2025-11-12
+Fusión de la solicitud de extracción #24 desde Anfevasadev-patch-2
+Agregar pruebas unitarias para el módulo de autenticación
+Agregar página de inicio de sesión con comentarios instructivos
+Agregar página de casinos con comentarios instructivos
+Agregar componente CasinoCard con comentarios instructivos
+Agregar src/App.jsx con instrucciones de enrutamiento
+Agregar src/main.jsx como punto de entrada del front-end
+Agregar src/index.css con directivas de Tailwind
+Agregar archivos de configuración de Tailwind y Vite para el front-end
+Agregar postcss.config.js para la configuración del front-end
+Agregar package.json inicial para el front-end
+
+==========================

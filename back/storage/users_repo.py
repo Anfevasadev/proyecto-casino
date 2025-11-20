@@ -1,39 +1,49 @@
-# -------------------------------------------
-# back/storage/users_repo.py
-# Propósito:
-#   - Operaciones CRUD contra data/users.csv usando pandas, expuestas
-#     como funciones simples que manipulan filas/dicts.
-#
-# CSV (encabezado esperado):
-#   id,username,password,role,is_active,is_deleted,
-#   created_at,created_by,updated_at,updated_by,deleted_at,deleted_by
-#
-# Funciones sugeridas:
-#   1) listar(only_active: bool | None = None, limit: int | None = None, offset: int = 0) -> list[dict]
-#      - Lee users.csv, opcionalmente filtra por is_active, aplica paginación,
-#        y devuelve lista de dicts públicos (sin password) o completa si el dominio lo pide.
-#
-#   2) obtener_por_id(user_id: int) -> dict | None
-#      - Retorna dict de la fila que coincida con id o None si no existe.
-#
-#   3) existe_username(username: str, exclude_id: int | None = None) -> bool
-#      - Valida unicidad; si exclude_id viene, ignora ese registro (útil para updates).
-#
-#   4) insertar_fila(row: dict) -> None
-#      - Carga DF, concatena nueva fila (asegurando columnas), escribe CSV.
-#      - La generación de id la hace el dominio o un helper previo (next_id).
-#
-#   5) actualizar_fila(user_id: int, cambios: dict) -> dict | None
-#      - Busca por id, aplica cambios de columnas existentes, guarda y retorna la fila resultante.
-#      - Si no existe, retorna None.
-#
-#   6) desactivar(user_id: int, clock: callable, actor: str, usar_is_deleted: bool = False) -> bool
-#      - Marca is_active=False. Si usar_is_deleted=True, setea is_deleted=True + deleted_at/by.
-#      - Actualiza updated_at/by.
-#      - Retorna True si se modificó, False si no existe.
-#
-# Consideraciones:
-#   - Password NO se cifra (requisito académico).
-#   - Mantener separación de responsabilidades: validaciones complejas en domain.
-#   - Al listar, por defecto ocultar password (o retornarlo y dejar que la API filtre).
-# -------------------------------------------
+import pandas as pd
+from typing import Optional, Dict, Any
+from pathlib import Path
+
+RUTA_DATOS = "data/users.csv"
+
+def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:  #Buscamos a un usuario por su user y retornamos un diccionario con los datos si lo encuentra o un None si no existe
+    try:
+        df = pd.read_csv(RUTA_DATOS) #cargamos y leemos los datos 
+        
+        user_data = df[df['username'] == username] #Filtramos para buscar por el usuario que le pasamos
+        
+        if not user_data.empty:
+            user_dict = user_data.iloc[0].to_dict() #si el user existe (no está vacio) seleccionamos la primer y unica fila que encontró y convertimos a diccionario
+            
+            user_dict['is_active'] = str(user_dict.get('is_active', 'false')).lower() == 'true' # Convertimos la fila "is_active" a booleano para que se pueda leer 
+            
+            return user_dict # Retornamos el diccionario con los datos del usuario
+        
+        return None # Si no se encontró el user retornamos None
+        
+    except FileNotFoundError:
+        print(f"Error: No se encontró el archivo {RUTA_DATOS}")
+        return None
+    except Exception as e:
+        print(f"Error al leer el repositorio de usuarios: {e}")
+        return None
+CSV_PATH = Path("data/users.csv")
+def load_users():
+    if CSV_PATH.exists():
+        return pd.read_csv(CSV_PATH)
+    return pd.DataFrame(columns = ["username", "password", "role", "is_active", "created_at", "created_by"])
+def save_users(df):
+    df.to_csv(CSV_PATH, index = False)
+def username_exists(username: str):
+    df = load_users()
+    return username in df["username"].values
+def insert_user(user_dict: dict):
+    df = load_users()
+
+    if user_dict["username"] in df["username"].values:
+        raise ValueError("Username ya existe")
+    df = pd.concat([df, pd.DataFrame([user_dict])], ignore_index= True)
+    save_users(df)   
+def get_next_line_number():
+    df = load_users()
+    if df.empty:
+        return 1
+    return len(df) + 1    
