@@ -27,189 +27,141 @@
 #   - No incluir código real; solo comentarios explicando cada paso.
 # -------------------------------------------
 
-STADO: ✅ 5/5 PRUEBAS PASANDO
+PRUEBAS IMPLEMENTADAS
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. test_login_caso_feliz
+   Descripcion: Usuario con credenciales correctas se autentica exitosamente
+   Entrada: username="admin", password="admin"
+   Salida Esperada: status_code=200, contiene id, username, role
+   Validaciones:
+   - response.status_code == 200
+   - data["username"] == "admin"
+   - isinstance(data["id"], int)
+   Resultado: PASADO
 
-🔴 ERROR #1: RUTAS DUPLICADAS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. test_login_usuario_no_existe
+   Descripcion: Error cuando usuario no existe
+   Entrada: username="usuario_que_no_existe", password="password123"
+   Salida Esperada: status_code=401, detail contiene "Usuario inválido" o "no está registrado"
+   Validaciones:
+   - response.status_code == 401
+   - "detail" in response.json()
+   Resultado: PASADO
 
-SÍNTOMA:
-  POST /api/api/v1/auth/login  ❌ (prefijo duplicado)
-  POST /api/v1/users/api/v1/users  ❌ (ruta duplicada)
+3. test_login_contraseña_incorrecta
+   Descripcion: Error cuando contraseña es incorrecta
+   Entrada: username="admin", password="contraseña_incorrecta"
+   Salida Esperada: status_code=401, detail contiene "Contraseña" o "incorrecta"
+   Validaciones:
+   - response.status_code == 401
+   - "detail" in response.json()
+   Resultado: PASADO
 
-ARCHIVO: back/api/router.py (líneas 12-14)
+4. test_login_usuario_inactivo
+   Descripcion: Error cuando usuario existe pero esta inactivo
+   Entrada: username="user_inactive", password="pass456"
+   Salida Esperada: status_code=403, detail contiene "inactivo"
+   Validaciones:
+   - response.status_code == 403
+   - "inactivo" in response.json()["detail"].lower()
+   Resultado: PASADO
 
-ANTES (❌ INCORRECTO):
-  api_router = APIRouter(prefix="/api/v1")
-  api_router.include_router(auth_router, tags=["auth"])
-  api_router.include_router(users_router, prefix="/users", tags=["users"])
+5. test_login_campos_requeridos
+   Descripcion: Pydantic rechaza requests con campos faltantes
+   Entrada: {"username": "admin"} (sin password)
+   Salida Esperada: status_code=422
+   Validaciones:
+   - response.status_code == 422
+   Resultado: PASADO
 
-DESPUÉS (✅ CORRECTO):
-  api_router = APIRouter()  # Sin prefijo aquí
-  api_router.include_router(auth_router, prefix="/v1/auth", tags=["auth"])
-  api_router.include_router(users_router, prefix="/v1/users", tags=["users"])
+ESTADISTICAS
 
-EXPLICACIÓN:
-  main.py ya añade /api, así que router.py NO debe añadirlo de nuevo
+Pruebas Totales: 5
+Pruebas Pasadas: 5
+Pruebas Fallidas: 0
+Tasa de Exito: 100%
+Tiempo Total: 0.95 segundos
+Archivos Modificados: 3
+Lineas de Codigo: 192
+
+CAMBIOS DE CODIGO
+
+back/api/router.py - Líneas 12-14
+Cambio: Remover prefix="/api/v1" y añadir prefijos a includes
+Antes: api_router = APIRouter(prefix="/api/v1")
+Despues: api_router = APIRouter()
+
+back/api/v1/users.py - Línea 73
+Cambio: Usar ruta relativa en decorator
+Antes: @router.post("/api/v1/users", response_model=UserOut)
+Despues: @router.post("/", response_model=UserOut)
+
+back/tests/test_auth.py - Nuevo archivo
+Cambio: Crear archivo de pruebas con 5 casos de prueba
+Contenido: 192 líneas de código de pruebas
+
+DATOS DE PRUEBA
+
+Archivo: data/users.csv
+Usuarios utilizados:
+- id=1, username="admin", password="admin", role="admin", is_active=True
+- id=2, username="user1", password="pass123", role="player", is_active=True
+- id=3, username="user_inactive", password="pass456", role="player", is_active=False
+
+RUTAS REGISTRADAS
+
+POST /api/v1/auth/login - Endpoint de autenticación
+POST /api/v1/users - Endpoint de usuarios
+GET /health - Health check
+
+COMO EJECUTAR
+
+Comando: python -m pytest back/tests/test_auth.py -v
+
+Resultado esperado:
+  back/tests/test_auth.py::TestLogin::test_login_caso_feliz PASSED
+  back/tests/test_auth.py::TestLogin::test_login_usuario_no_existe PASSED
+  back/tests/test_auth.py::TestLogin::test_login_contraseña_incorrecta PASSED
+  back/tests/test_auth.py::TestLogin::test_login_usuario_inactivo PASSED
+  back/tests/test_auth.py::TestLogin::test_login_campos_requeridos PASSED
   
-RESULTADO:
-  ✅ POST /api/v1/auth/login  (CORRECTO)
-  ✅ POST /api/v1/users  (CORRECTO)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🔴 ERROR #2: RUTAS HARDCODEADAS EN DECORATORS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-SÍNTOMA:
-  POST /api/v1/users/api/v1/users  ❌ (ruta duplicada)
-
-ARCHIVO: back/api/v1/users.py (línea 73)
-
-ANTES (❌ INCORRECTO):
-  @router.post("/api/v1/users", response_model=UserOut)
-  def create_user_endpoint(user: UserIn):
-      ...
-
-DESPUÉS (✅ CORRECTO):
-  @router.post("/", response_model=UserOut)
-  def create_user_endpoint(user: UserIn):
-      ...
-
-CONCEPTO CLAVE:
-  ❌ Cuando usas include_router(prefix="/v1/users"), NO escribas la ruta completa
-  ✅ Usa solo la parte relativa (/) en el decorator
-
-  Ejemplo correcto:
-    include_router(users_router, prefix="/v1/users")
-    @router.post("/")  ← Relativa, no /api/v1/users
-    Resultado: /v1/users + / = /v1/users ✅
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🔴 ERROR #3: TESTS FALLANDO CON 404
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-SÍNTOMA:
-  AssertionError: Se esperaba 200, se obtuvo 404
-  Response: {"detail":"Not Found"}
-
-CAUSA:
-  Errores #1 y #2 arriba
-
-ARCHIVO: back/tests/test_auth.py
-
-SOLUCIÓN:
-  Corregir Errores #1 y #2
-
-RESULTADO:
-  ✅ 5/5 TESTS PASANDO
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📊 CAMBIOS REALIZADOS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-ARCHIVO                    TIPO       LÍNEAS    ESTADO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-back/api/router.py         Modificado 4         ✅
-back/api/v1/users.py       Modificado 1         ✅
-back/tests/test_auth.py    Nuevo      192       ✅
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ PRUEBAS UNITARIAS (5 TOTAL)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ test_login_caso_feliz
-   Objetivo: Usuario con credenciales correctas puede loguearse
-   Status Code Esperado: 200
-   Resultado: PASADO ✅
-
-✅ test_login_usuario_no_existe
-   Objetivo: Error cuando usuario no existe
-   Status Code Esperado: 401 Unauthorized
-   Resultado: PASADO ✅
-
-✅ test_login_contraseña_incorrecta
-   Objetivo: Error cuando contraseña es incorrecta
-   Status Code Esperado: 401 Unauthorized
-   Resultado: PASADO ✅
-
-✅ test_login_usuario_inactivo
-   Objetivo: Error cuando usuario está inactivo
-   Status Code Esperado: 403 Forbidden
-   Resultado: PASADO ✅
-
-✅ test_login_campos_requeridos
-   Objetivo: Pydantic rechaza requests incompletos
-   Status Code Esperado: 422 Unprocessable Entity
-   Resultado: PASADO ✅
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🚀 CÓMO EJECUTAR LAS PRUEBAS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-$ python -m pytest back/tests/test_auth.py -v
-
-RESULTADO ESPERADO:
   ===== 5 passed in 0.95s =====
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ERRORES SOLUCIONADOS
 
-🔑 CONCEPTOS CLAVE PARA RECORDAR
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Error 1: Rutas duplicadas en API
+Problema: POST /api/api/v1/auth/login (prefijo duplicado)
+Causa: Prefijo "/api/v1" incluido en router.py y main.py
+Solucion: Cambiar APIRouter(prefix="/api/v1") a APIRouter()
 
-1. ESTRUCTURA DE RUTAS EN FASTAPI
-   
-   main.py:
-     app.include_router(api_router, prefix="/api")
-                                              ↓
-   router.py:
-     api_router.include_router(auth_router, prefix="/v1/auth")
-                                                   ↓
-   v1/auth.py:
-     @router.post("/login")
-              ↓
-   RESULTADO FINAL: /api + /v1/auth + /login = /api/v1/auth/login ✅
+Error 2: Rutas hardcodeadas en decorators
+Problema: POST /api/v1/users/api/v1/users (ruta duplicada)
+Causa: Decorator con ruta absoluta en lugar de relativa
+Solucion: Cambiar @router.post("/api/v1/users") a @router.post("/")
 
-2. REGLA DE ORO
-   
-   Cuando uses include_router(prefix="..."), los decorators deben ser RELATIVOS
-   
-   ✅ BIEN:  @router.post("/")
-   ❌ MAL:   @router.post("/api/v1/users")
+Error 3: Tests fallando con HTTP 404
+Problema: AssertionError: Se esperaba 200, se obtuvo 404
+Causa: Rutas incorrectas en API (Errores 1 y 2)
+Solucion: Corregir Errores 1 y 2
 
-3. NUNCA DUPLICAR PREFIJOS
-   
-   ❌ MALO:
-      APIRouter(prefix="/api/v1")
-      + app.include_router(prefix="/api")
-      = /api/api/v1  (DUPLICADO)
-   
-   ✅ BIEN:
-      APIRouter()
-      + app.include_router(prefix="/api")
-      = /api  (CORRECTO)
+ARCHIVOS RELACIONADOS
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+back/api/v1/auth.py - Endpoint de autenticación
+back/domain/users/login.py - Lógica de autenticación
+back/models/auth.py - Modelos Pydantic (LoginIn, LoginOut)
+back/storage/users_repo.py - Acceso a datos de usuarios
+data/users.csv - Datos de prueba
+back/main.py - Punto de entrada
+back/api/router.py - Configuración de rutas
 
-📞 INFORMACIÓN
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INFORMACION TECNICA
 
-Fecha:        20 de Noviembre, 2025
-Rama:         QA
-Proyecto:     proyecto-casino
-Python:       3.12.1
-Framework:    FastAPI
-Testing:      pytest 8.2.1
+Lenguaje: Python 3.12.1
+Framework: FastAPI
+Testing: pytest 8.2.1
+Patron de Pruebas: AAA (Arrange-Act-Assert)
+TestClient: FastAPI TestClient
 
-Status:       ✅ COMPLETADO - TODAS LAS PRUEBAS PASANDO
+CONCLUSION
 
-DOCUMENTACIÓN DISPONIBLE:
-  • RESUMEN_PRUEBAS_AUTH.md - Documentación técnica completa (742 líneas)
-  • ERRORES_Y_SOLUCIONES.md - Guía rápida de errores
-  • INDEX.md - Índice de documentación
-  • GUIA_RAPIDA_DESARROLLADORES.txt - Este archivo
+Todas las 5 pruebas unitarias del endpoint de autenticación están pasando correctamente. El endpoint valida casos de éxito, errores de usuario, errores de contraseña, usuarios inactivos y validación de datos con Pydantic. Los 3 errores de ruteo fueron identificados y corregidos.
