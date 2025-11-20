@@ -1,0 +1,24 @@
+- 23b7f31 2025-11-20 Merge remote-tracking branch 'origin/desarrollo2' into QA
+- 1708580 2025-11-19 Add line number to user creation process
+- 5096a3e 2025-11-19 Implement get_next_line_number function
+- 1a62a14 2025-11-19 Agregar enrutamiento para el módulo de usuarios en el API
+- 8270b95 2025-11-19 Eliminar archivo package-lock.json
+- ba384ab 2025-11-19 Agregar archivo .gitignore y actualizar package-lock.json
+- 666e5ff 2025-11-19 Eliminar carpeta node modules
+- 8e10fb2 2025-11-15 desarrollo-front
+- d403354 2025-11-15 Implementacion de crear usuarios
+- 6f7e77c 2025-11-14 Merge pull request #26 from Anfevasadev/feat/implementar-login-auth
+- a656af3 2025-11-14 Corregir el parámetro 'detalle' a 'description' en el endpoint de autenticación de usuario
+- 3dcfd15 2025-11-14 Implementar la función de creación de la aplicación FastAPI y el endpoint de verificación de estado
+- f05381e 2025-11-14 Implementar autenticación de usuario con endpoint de login y validación de credenciales (versión preliminar)
+- e2dc2e9 2025-11-12 Merge pull request #24 from Anfevasadev/Anfevasadev-patch-2
+- 3c27eb4 2025-11-12 Add unit tests for authentication module
+- ba57caa 2025-11-12 Add Login page with instructional comments
+- 658942b 2025-11-12 Add Casinos page with instructional comments
+- d822262 2025-11-12 Add CasinoCard component with instructional comments
+- 0f86846 2025-11-12 Add src/App.jsx with routing instructions
+- dc4af99 2025-11-12 Add src/main.jsx for front-end entry point
+- 172c377 2025-11-12 Add src/index.css with Tailwind directives
+- 0867cf0 2025-11-12 Add tailwind and vite config files for front-end setup
+- f4283ca 2025-11-12 Add postcss.config.js for front-end setup
+- 895239e 2025-11-12 Add initial package.json for front-end setup
