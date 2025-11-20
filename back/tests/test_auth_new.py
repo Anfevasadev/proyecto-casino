@@ -188,4 +188,3 @@ class TestLogin:
         
         # Assert: validar que Pydantic rechaza la solicitud
         assert response.status_code == 422, f"Se esperaba 422, se obtuvo {response.status_code}"
-

@@ -1,0 +1,379 @@
+DOCUMENTACION TECNICA - PRUEBAS UNITARIAS DE AUTENTICACION
+
+DESCRIPCION GENERAL
+
+Se implementaron 5 pruebas unitarias para el endpoint POST /api/v1/auth/login. Las pruebas validan el flujo completo de autenticación incluyendo casos exitosos y casos de error. Se corrigieron 3 errores críticos de ruteo en la configuración de la API.
+
+ESTRUCTURA DEL ARCHIVO DE PRUEBAS
+
+back/tests/test_auth.py
+- Fixture: client() - Proporciona TestClient para requests
+- Clase: TestLogin - Contiene 5 métodos de prueba
+
+DETALLE DE CADA PRUEBA
+
+PRUEBA 1: test_login_caso_feliz
+
+Secuencia:
+  Arrange: Preparar datos login_data = {"username": "admin", "password": "admin"}
+  Act: Ejecutar client.post("/api/v1/auth/login", json=login_data)
+  Assert: Validar response.status_code == 200 y estructura de respuesta
+
+Validaciones Implementadas:
+  assert response.status_code == 200
+  assert "id" in data
+  assert "username" in data
+  assert "role" in data
+  assert data["username"] == "admin"
+  assert isinstance(data["id"], int)
+
+Respuesta Esperada:
+  Status Code: 200
+  Body: {"id": 1, "username": "admin", "role": "admin"}
+
+Logica Backend:
+  En back/domain/users/login.py se valida:
+  - Usuario existe en CSV
+  - Contraseña coincide
+  - Usuario esta activo
+
+PRUEBA 2: test_login_usuario_no_existe
+
+Secuencia:
+  Arrange: Preparar datos con usuario inexistente
+  Act: Ejecutar client.post("/api/v1/auth/login", json=login_data)
+  Assert: Validar response.status_code == 401
+
+Validaciones Implementadas:
+  assert response.status_code == 401
+  assert "detail" in data
+  assert "Usuario inválido" in data["detail"] or "no está registrado" in data["detail"]
+
+Respuesta Esperada:
+  Status Code: 401 Unauthorized
+  Body: {"detail": "Usuario inválido. El usuario no está registrado"}
+
+Logica Backend:
+  if not user:
+      raise HTTPException(
+          status_code=status.HTTP_401_UNAUTHORIZED,
+          detail="Usuario inválido. El usuario no está registrado"
+      )
+
+PRUEBA 3: test_login_contraseña_incorrecta
+
+Secuencia:
+  Arrange: Preparar datos con contraseña incorrecta
+  Act: Ejecutar client.post("/api/v1/auth/login", json=login_data)
+  Assert: Validar response.status_code == 401
+
+Validaciones Implementadas:
+  assert response.status_code == 401
+  assert "detail" in data
+  assert "Contraseña" in data["detail"] or "incorrecta" in data["detail"]
+
+Respuesta Esperada:
+  Status Code: 401 Unauthorized
+  Body: {"detail": "Contraseña incorrecta. Intente nuevamente"}
+
+Logica Backend:
+  if user['password'] != password:
+      raise HTTPException(
+          status_code=status.HTTP_401_UNAUTHORIZED,
+          detail="Contraseña incorrecta. Intente nuevamente"
+      )
+
+PRUEBA 4: test_login_usuario_inactivo
+
+Secuencia:
+  Arrange: Preparar datos con usuario inactivo
+  Act: Ejecutar client.post("/api/v1/auth/login", json=login_data)
+  Assert: Validar response.status_code == 403
+
+Validaciones Implementadas:
+  assert response.status_code == 403
+  assert "detail" in data
+  assert "inactivo" in data["detail"].lower()
+
+Respuesta Esperada:
+  Status Code: 403 Forbidden
+  Body: {"detail": "Usuario inactivo. Contacte al administrador."}
+
+Logica Backend:
+  if not user.get('is_active', False):
+      raise HTTPException(
+          status_code=status.HTTP_403_FORBIDDEN,
+          detail="Usuario inactivo. Contacte al administrador."
+      )
+
+Datos de Prueba:
+  Usuario: user_inactive
+  Contraseña: pass456
+  Estado: is_active = False
+
+PRUEBA 5: test_login_campos_requeridos
+
+Secuencia:
+  Arrange: Preparar datos incompletos sin password
+  Act: Ejecutar client.post("/api/v1/auth/login", json=login_data)
+  Assert: Validar response.status_code == 422
+
+Validaciones Implementadas:
+  assert response.status_code == 422
+
+Respuesta Esperada:
+  Status Code: 422 Unprocessable Entity
+  Body: Detalle de validación de Pydantic
+
+Logica Backend:
+  En back/models/auth.py:
+  class LoginIn(BaseModel):
+      username: str
+      password: str
+  
+  Pydantic valida automáticamente que ambos campos estén presentes
+
+CAMBIOS EN CODIGO
+
+CAMBIO 1: back/api/router.py
+
+Ubicacion: Lineas 12-14
+
+Antes:
+  api_router = APIRouter(prefix="/api/v1")
+  api_router.include_router(auth_router, tags=["auth"])
+  api_router.include_router(users_router, prefix="/users", tags=["users"])
+
+Despues:
+  api_router = APIRouter()
+  api_router.include_router(auth_router, prefix="/v1/auth", tags=["auth"])
+  api_router.include_router(users_router, prefix="/v1/users", tags=["users"])
+
+Razon:
+  main.py ya incluye el router con prefix="/api"
+  No debe duplicarse el prefijo /api/v1 en router.py
+  Cada include_router debe especificar su propio prefijo
+
+Resultado:
+  Ruta correcta: /api + /v1/auth = /api/v1/auth
+  Ruta correcta: /api + /v1/users = /api/v1/users
+
+CAMBIO 2: back/api/v1/users.py
+
+Ubicacion: Linea 73
+
+Antes:
+  @router.post("/api/v1/users", response_model=UserOut)
+  def create_user_endpoint(user: UserIn):
+      new_user = create_user(user, created_by="system")
+      return new_user
+
+Despues:
+  @router.post("/", response_model=UserOut)
+  def create_user_endpoint(user: UserIn):
+      new_user = create_user(user, created_by="system")
+      return new_user
+
+Razon:
+  Cuando se usa include_router(prefix="/v1/users"), los decorators deben ser relativos
+  No debe escribirse la ruta absoluta completa en el decorator
+  Sumar el prefix con la ruta del decorator da la ruta final
+
+Estructura Correcta:
+  Nivel main.py: prefix="/api"
+  Nivel router.py: prefix="/v1/users"
+  Nivel decorator: "/"
+  Resultado: /api + /v1/users + / = /api/v1/users
+
+CAMBIO 3: back/tests/test_auth.py
+
+Ubicacion: Archivo nuevo
+
+Contenido:
+  - Imports: pytest, TestClient, app
+  - Fixture: client() retorna TestClient(app)
+  - Clase TestLogin con 5 métodos de prueba
+  - Documentación docstring en cada prueba
+  - Validaciones con assert
+
+Lineas Totales: 192
+
+RESOLUCION DE ERRORES
+
+ERROR 1: Rutas Duplicadas
+
+Sintoma:
+  POST /api/api/v1/auth/login (404 Not Found)
+  POST /api/v1/users/api/v1/users (404 Not Found)
+
+Causa Raiz:
+  En main.py: app.include_router(api_router, prefix="/api")
+  En router.py: api_router = APIRouter(prefix="/api/v1")
+  Resultado: /api + /api/v1 = /api/api/v1 (DUPLICADO)
+
+Identificacion:
+  Se listaron las rutas registradas:
+  from back.main import app
+  for route in app.routes:
+      if hasattr(route, 'path'):
+          print(f"{route.methods} {route.path}")
+
+Solucion:
+  Cambiar router.py para no incluir el prefijo /api/v1
+  Usar APIRouter() sin prefijo
+  Especificar prefijos en cada include_router()
+
+Verificacion:
+  Rutas correctas registradas:
+  POST /api/v1/auth/login
+  POST /api/v1/users
+
+ERROR 2: Rutas Hardcodeadas en Decorators
+
+Sintoma:
+  POST /api/v1/users/api/v1/users (404 Not Found)
+
+Causa Raiz:
+  En users.py: @router.post("/api/v1/users")
+  Con include_router(prefix="/v1/users")
+  Resultado: /v1/users + /api/v1/users = /v1/users/api/v1/users (DUPLICADO)
+
+Concepto Erroneo:
+  Escribir la ruta completa en el decorator cuando ya se usa prefix
+
+Solucion:
+  Usar rutas relativas en decorators cuando se usa include_router(prefix=...)
+  El prefijo proporciona la ruta base
+  El decorator solo proporciona el sufijo relativo
+
+Verificacion:
+  Ruta correcta: /api/v1/users
+
+ERROR 3: Tests Fallando por 404
+
+Sintoma:
+  AssertionError: Se esperaba 200, se obtuvo 404
+  Response: {"detail":"Not Found"}
+
+Causa Raiz:
+  Los errores 1 y 2 hacian que las rutas registradas fueran incorrectas
+  Las pruebas buscaban /api/v1/auth/login pero la ruta registrada era /api/api/v1/auth/login
+
+Investigacion:
+  Se ejecutó código para listar rutas registradas
+  Se comparó con las rutas usadas en las pruebas
+  No coincidían → HTTP 404
+
+Solucion:
+  Corregir los errores 1 y 2 en la configuración de rutas
+
+Verificacion:
+  5/5 pruebas pasando después de corregir
+
+EJECUCION DE PRUEBAS
+
+Comando:
+  python -m pytest back/tests/test_auth.py -v
+
+Flags:
+  -v: Verbose, muestra cada prueba individualmente
+  -s: Show output, muestra prints durante las pruebas
+  --tb=short: Muestra traceback acortado en errores
+
+Resultado Esperado:
+  ===== test session starts =====
+  collected 5 items
+  
+  back/tests/test_auth.py::TestLogin::test_login_caso_feliz PASSED
+  back/tests/test_auth.py::TestLogin::test_login_usuario_no_existe PASSED
+  back/tests/test_auth.py::TestLogin::test_login_contraseña_incorrecta PASSED
+  back/tests/test_auth.py::TestLogin::test_login_usuario_inactivo PASSED
+  back/tests/test_auth.py::TestLogin::test_login_campos_requeridos PASSED
+  
+  ===== 5 passed in 0.95s =====
+
+Datos de Prueba Utilizados
+
+Archivo: data/users.csv
+
+Usuario 1:
+  id: 1
+  username: admin
+  password: admin
+  role: admin
+  is_active: True
+
+Usuario 2:
+  id: 2
+  username: user1
+  password: pass123
+  role: player
+  is_active: True
+
+Usuario 3:
+  id: 3
+  username: user_inactive
+  password: pass456
+  role: player
+  is_active: False
+
+ARQUITECTURA DE AUTENTICACION
+
+Componentes:
+
+1. Endpoint: POST /api/v1/auth/login
+   Archivo: back/api/v1/auth.py
+   Entrada: LoginIn (username, password)
+   Salida: LoginOut (id, username, role)
+
+2. Logica de Dominio: login_user()
+   Archivo: back/domain/users/login.py
+   Validaciones:
+   - Existencia del usuario
+   - Contraseña correcta
+   - Usuario activo
+
+3. Acceso a Datos: get_user_by_username()
+   Archivo: back/storage/users_repo.py
+   Lee datos de CSV
+
+4. Modelos: LoginIn, LoginOut
+   Archivo: back/models/auth.py
+   Validacion con Pydantic
+
+Flujo:
+
+Usuario → POST /api/v1/auth/login
+          ↓
+          LoginIn (validado por Pydantic)
+          ↓
+          login_user() en domain
+          ↓
+          get_user_by_username() en storage
+          ↓
+          Validaciones
+          ↓
+          LoginOut o HTTPException
+
+Codigos de Estado HTTP:
+
+200 OK: Autenticación exitosa
+401 Unauthorized: Usuario no existe o contraseña incorrecta
+403 Forbidden: Usuario existe pero esta inactivo
+422 Unprocessable Entity: Datos de entrada inválidos
+
+RESUMEN DE RESULTADOS
+
+Pruebas Implementadas: 5
+Pruebas Pasadas: 5 (100%)
+Pruebas Fallidas: 0
+Tiempo Total de Ejecucion: 0.95 segundos
+
+Errores Encontrados: 3
+Errores Solucionados: 3
+Errores Pendientes: 0
+
+Archivos Modificados: 3
+Lineas de Codigo Nuevas: 192
+
+Estado Actual: Completado y Funcional

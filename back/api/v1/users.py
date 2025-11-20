@@ -72,7 +72,7 @@ from back.domain.users.create import create_user
 
 router = APIRouter()
 
-@router.post("/api/v1/users", response_model=UserOut)
+@router.post("/", response_model=UserOut)
 def create_user_endpoint(user: UserIn):
     new_user = create_user(user, created_by="system")
     return new_user

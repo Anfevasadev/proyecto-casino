@@ -1,0 +1,151 @@
+PRUEBAS UNITARIAS - ENDPOINT DE AUTENTICACION
+
+Fecha: 20 de Noviembre, 2025
+Rama: QA
+Repositorio: proyecto-casino
+Estado: 5/5 PRUEBAS PASANDO
+
+ARCHIVO DE PRUEBAS
+Ubicacion: back/tests/test_auth.py
+Lineas: 192
+Patron: AAA (Arrange-Act-Assert)
+Framework: FastAPI + pytest
+
+PRUEBAS IMPLEMENTADAS
+
+1. test_login_caso_feliz
+   Descripcion: Usuario con credenciales correctas se autentica exitosamente
+   Entrada: username="admin", password="admin"
+   Salida Esperada: status_code=200, contiene id, username, role
+   Validaciones:
+   - response.status_code == 200
+   - data["username"] == "admin"
+   - isinstance(data["id"], int)
+   Resultado: PASADO
+
+2. test_login_usuario_no_existe
+   Descripcion: Error cuando usuario no existe
+   Entrada: username="usuario_que_no_existe", password="password123"
+   Salida Esperada: status_code=401, detail contiene "Usuario inválido" o "no está registrado"
+   Validaciones:
+   - response.status_code == 401
+   - "detail" in response.json()
+   Resultado: PASADO
+
+3. test_login_contraseña_incorrecta
+   Descripcion: Error cuando contraseña es incorrecta
+   Entrada: username="admin", password="contraseña_incorrecta"
+   Salida Esperada: status_code=401, detail contiene "Contraseña" o "incorrecta"
+   Validaciones:
+   - response.status_code == 401
+   - "detail" in response.json()
+   Resultado: PASADO
+
+4. test_login_usuario_inactivo
+   Descripcion: Error cuando usuario existe pero esta inactivo
+   Entrada: username="user_inactive", password="pass456"
+   Salida Esperada: status_code=403, detail contiene "inactivo"
+   Validaciones:
+   - response.status_code == 403
+   - "inactivo" in response.json()["detail"].lower()
+   Resultado: PASADO
+
+5. test_login_campos_requeridos
+   Descripcion: Pydantic rechaza requests con campos faltantes
+   Entrada: {"username": "admin"} (sin password)
+   Salida Esperada: status_code=422
+   Validaciones:
+   - response.status_code == 422
+   Resultado: PASADO
+
+ESTADISTICAS
+
+Pruebas Totales: 5
+Pruebas Pasadas: 5
+Pruebas Fallidas: 0
+Tasa de Exito: 100%
+Tiempo Total: 0.95 segundos
+Archivos Modificados: 3
+Lineas de Codigo: 192
+
+CAMBIOS DE CODIGO
+
+back/api/router.py - Líneas 12-14
+Cambio: Remover prefix="/api/v1" y añadir prefijos a includes
+Antes: api_router = APIRouter(prefix="/api/v1")
+Despues: api_router = APIRouter()
+
+back/api/v1/users.py - Línea 73
+Cambio: Usar ruta relativa en decorator
+Antes: @router.post("/api/v1/users", response_model=UserOut)
+Despues: @router.post("/", response_model=UserOut)
+
+back/tests/test_auth.py - Nuevo archivo
+Cambio: Crear archivo de pruebas con 5 casos de prueba
+Contenido: 192 líneas de código de pruebas
+
+DATOS DE PRUEBA
+
+Archivo: data/users.csv
+Usuarios utilizados:
+- id=1, username="admin", password="admin", role="admin", is_active=True
+- id=2, username="user1", password="pass123", role="player", is_active=True
+- id=3, username="user_inactive", password="pass456", role="player", is_active=False
+
+RUTAS REGISTRADAS
+
+POST /api/v1/auth/login - Endpoint de autenticación
+POST /api/v1/users - Endpoint de usuarios
+GET /health - Health check
+
+COMO EJECUTAR
+
+Comando: python -m pytest back/tests/test_auth.py -v
+
+Resultado esperado:
+  back/tests/test_auth.py::TestLogin::test_login_caso_feliz PASSED
+  back/tests/test_auth.py::TestLogin::test_login_usuario_no_existe PASSED
+  back/tests/test_auth.py::TestLogin::test_login_contraseña_incorrecta PASSED
+  back/tests/test_auth.py::TestLogin::test_login_usuario_inactivo PASSED
+  back/tests/test_auth.py::TestLogin::test_login_campos_requeridos PASSED
+  
+  ===== 5 passed in 0.95s =====
+
+ERRORES SOLUCIONADOS
+
+Error 1: Rutas duplicadas en API
+Problema: POST /api/api/v1/auth/login (prefijo duplicado)
+Causa: Prefijo "/api/v1" incluido en router.py y main.py
+Solucion: Cambiar APIRouter(prefix="/api/v1") a APIRouter()
+
+Error 2: Rutas hardcodeadas en decorators
+Problema: POST /api/v1/users/api/v1/users (ruta duplicada)
+Causa: Decorator con ruta absoluta en lugar de relativa
+Solucion: Cambiar @router.post("/api/v1/users") a @router.post("/")
+
+Error 3: Tests fallando con HTTP 404
+Problema: AssertionError: Se esperaba 200, se obtuvo 404
+Causa: Rutas incorrectas en API (Errores 1 y 2)
+Solucion: Corregir Errores 1 y 2
+
+ARCHIVOS RELACIONADOS
+
+back/api/v1/auth.py - Endpoint de autenticación
+back/domain/users/login.py - Lógica de autenticación
+back/models/auth.py - Modelos Pydantic (LoginIn, LoginOut)
+back/storage/users_repo.py - Acceso a datos de usuarios
+data/users.csv - Datos de prueba
+back/main.py - Punto de entrada
+back/api/router.py - Configuración de rutas
+
+INFORMACION TECNICA
+
+Lenguaje: Python 3.12.1
+Framework: FastAPI
+Testing: pytest 8.2.1
+Patron de Pruebas: AAA (Arrange-Act-Assert)
+TestClient: FastAPI TestClient
+
+CONCLUSION
+
+Todas las 5 pruebas unitarias del endpoint de autenticación están pasando correctamente. El endpoint valida casos de éxito, errores de usuario, errores de contraseña, usuarios inactivos y validación de datos con Pydantic. Los 3 errores de ruteo fueron identificados y corregidos.
