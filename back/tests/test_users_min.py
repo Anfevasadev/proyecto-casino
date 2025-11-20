@@ -1,38 +1,31 @@
-# -------------------------------------------
-# back/tests/test_users_min.py
-# Propósito:
-#   - Validar el flujo mínimo de usuarios: crear y listar.
-#
-# Preparación:
-#   - Asegurar que los repos apunten a CSVs de prueba (no a los de producción en /data).
-#     Opciones:
-#       * Usar tmpdir/TemporaryDirectory y copiar encabezados vacíos.
-#       * Mockear las rutas de back/storage/csv_paths.py para apuntar al tmp.
-#
-# Casos a cubrir (mínimos):
-#   1) Crear usuario feliz (POST /api/v1/users/)
-#      - Entrada (JSON): {"username":"ana","password":"123","role":"operador"}
-#      - Validaciones esperadas por la API/dominio:
-#          * username no vacío
-#          * role permitido
-#      - Salida:
-#          * status_code == 201
-#          * JSON con campos públicos: id, username, role, is_active (True por defecto).
-#          * No debe exponer "password".
-#
-#   2) Listar usuarios (GET /api/v1/users/)
-#      - Entrada: none o query simples (limit/offset).
-#      - Salida:
-#          * status_code == 200
-#          * JSON = lista con al menos el usuario creado en (1).
-#
-#   3) Username duplicado (POST /api/v1/users/)
-#      - Entrada: repetir "ana".
-#      - Salida:
-#          * status_code == 400 (o el código acordado)
-#          * JSON con mensaje de error indicando duplicidad.
-#
-# Reglas/Notas:
-#   - No verificar auditoría aquí (created_at/by...); mantener test minimalista.
-#   - Asegurarse de limpiar o aislar CSVs de prueba entre tests para evitar contaminación.
-# -------------------------------------------
+INFORME DE ERROR EN ENDPOINT DE CREACIÓN DE USUARIO
+
+Descripción del error:
+Actualmente, el endpoint POST /api/v1/users no captura la excepción ValueError que se lanza cuando se intenta crear un usuario con un username ya existente. Esto provoca que la excepción se propague sin control, resultando en un error interno del servidor y haciendo que las pruebas unitarias fallen.
+
+Evidencia:
+Durante la ejecución de las pruebas unitarias, se obtiene el siguiente error:
+ValueError: El username ya está en uso.
+
+Ubicación:
+Archivo: back/api/v1/users.py
+Función: create_user_endpoint
+
+Causa:
+El endpoint llama directamente a la función create_user, la cual lanza un ValueError si el username ya existe, pero este error no es capturado ni transformado en una respuesta HTTP adecuada.
+
+Recomendación de corrección:
+Modificar el endpoint para capturar la excepción ValueError y devolver una respuesta HTTP 400 (Bad Request) usando HTTPException de FastAPI. Ejemplo sugerido:
+
+from fastapi import HTTPException
+
+@router.post("/api/v1/users", response_model=UserOut)
+def create_user_endpoint(user: UserIn):
+    try:
+        new_user = create_user(user, created_by="system")
+        return new_user
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+Impacto:
+Esto permitirá que el endpoint devuelva un mensaje de error claro al cliente y que las pruebas unitarias pasen correctamente, mejorando la robustez y mantenibilidad del código.
