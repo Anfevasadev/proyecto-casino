@@ -2,48 +2,71 @@ import pandas as pd
 from typing import Optional, Dict, Any
 from pathlib import Path
 
-RUTA_DATOS = "data/users.csv"
-
-def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:  #Buscamos a un usuario por su user y retornamos un diccionario con los datos si lo encuentra o un None si no existe
-    try:
-        df = pd.read_csv(RUTA_DATOS) #cargamos y leemos los datos 
-        
-        user_data = df[df['username'] == username] #Filtramos para buscar por el usuario que le pasamos
-        
-        if not user_data.empty:
-            user_dict = user_data.iloc[0].to_dict() #si el user existe (no está vacio) seleccionamos la primer y unica fila que encontró y convertimos a diccionario
-            
-            user_dict['is_active'] = str(user_dict.get('is_active', 'false')).lower() == 'true' # Convertimos la fila "is_active" a booleano para que se pueda leer 
-            
-            return user_dict # Retornamos el diccionario con los datos del usuario
-        
-        return None # Si no se encontró el user retornamos None
-        
-    except FileNotFoundError:
-        print(f"Error: No se encontró el archivo {RUTA_DATOS}")
-        return None
-    except Exception as e:
-        print(f"Error al leer el repositorio de usuarios: {e}")
-        return None
 CSV_PATH = Path("data/users.csv")
-def load_users():
-    if CSV_PATH.exists():
-        return pd.read_csv(CSV_PATH)
-    return pd.DataFrame(columns = ["username", "password", "role", "is_active", "created_at", "created_by"])
-def save_users(df):
-    df.to_csv(CSV_PATH, index = False)
-def username_exists(username: str):
-    df = load_users()
-    return username in df["username"].values
-def insert_user(user_dict: dict):
-    df = load_users()
 
-    if user_dict["username"] in df["username"].values:
-        raise ValueError("Username ya existe")
-    df = pd.concat([df, pd.DataFrame([user_dict])], ignore_index= True)
-    save_users(df)   
-def get_next_line_number():
-    df = load_users()
+EXPECTED_COLUMNS = [
+    "id",
+    "username",
+    "password",
+    "role",
+    "is_active",
+    "is_deleted",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by",
+    "deleted_at",
+    "deleted_by",
+]
+
+
+def _read_df() -> pd.DataFrame:
+    if CSV_PATH.exists():
+        df = pd.read_csv(CSV_PATH)
+    else:
+        df = pd.DataFrame(columns=EXPECTED_COLUMNS)
+    # Asegurar columnas completas
+    for col in EXPECTED_COLUMNS:
+        if col not in df.columns:
+            df[col] = None
+    return df[EXPECTED_COLUMNS]
+
+
+def _write_df(df: pd.DataFrame) -> None:
+    df.to_csv(CSV_PATH, index=False)
+
+
+def next_id() -> int:
+    df = _read_df()
     if df.empty:
         return 1
-    return len(df) + 1    
+    # Tomar solo ids válidos numéricos
+    ids = [int(x) for x in df["id"].dropna().tolist() if str(x).strip() != ""]
+    return (max(ids) + 1) if ids else 1
+
+
+def username_exists(username: str) -> bool:
+    df = _read_df()
+    subset = df[(df["username"] == username) & (df["is_deleted"].astype(str).str.lower() != "true")]
+    return not subset.empty
+
+
+def insert_user(row: Dict[str, Any]) -> Dict[str, Any]:
+    df = _read_df()
+    if username_exists(row["username"]):
+        raise ValueError("Username ya existe")
+    df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
+    _write_df(df)
+    return row
+
+
+def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
+    df = _read_df()
+    subset = df[df["username"] == username]
+    if subset.empty:
+        return None
+    user = subset.iloc[0].to_dict()
+    # Normalizar tipos
+    user["id"] = int(user["id"]) if str(user.get("id", "")).strip() else None
+    user["is_active"] = str(user.get("is_active", "false")).lower() == "true"
+    return user

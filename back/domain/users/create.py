@@ -33,24 +33,45 @@
 #   - Role inválido -> excepción.
 # -------------------------------------------
 from datetime import datetime
-from back.storage.users_repo import insert_user, username_exists
-from back.storage.users_repo import get_next_line_number
+from back.storage import users_repo
+from back.models.users import UserIn
 
-def create_user(user_in, created_by="admin"):
-    if username_exists(user_in.username):
-        raise ValueError("El username ya está en uso.")
+ROLES_PERMITIDOS = {"admin", "operador", "soporte"}
 
-    user_dict = {
+def _clock() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def create_user(user_in: UserIn, created_by: str = "system"):
+    # Validar rol (por si viene manipulado externamente)
+    if user_in.role.value not in ROLES_PERMITIDOS:
+        raise ValueError("Rol inválido; use admin|operador|soporte")
+
+    if users_repo.username_exists(user_in.username):
+        raise ValueError("El username ya está en uso")
+
+    new_id = users_repo.next_id()
+    now = _clock()
+    row = {
+        "id": new_id,
         "username": user_in.username,
         "password": user_in.password,
-        "role": user_in.role,
+        "role": user_in.role.value,
         "is_active": user_in.is_active,
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "is_deleted": False,
+        "created_at": now,
         "created_by": created_by,
-        "line_number": get_next_line_number()
+        "updated_at": None,
+        "updated_by": None,
+        "deleted_at": None,
+        "deleted_by": None,
     }
 
-    insert_user(user_dict)
+    users_repo.insert_user(row)
 
-    user_dict.pop("password")  # borrar la contraseña antes de devolver
-    return user_dict
+    return {
+        "id": new_id,
+        "username": row["username"],
+        "role": row["role"],
+        "is_active": row["is_active"],
+    }

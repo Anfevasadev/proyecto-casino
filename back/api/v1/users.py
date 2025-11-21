@@ -66,13 +66,16 @@
 # Códigos de estado:
 #   - GET 200, POST 201, PUT 200, DELETE 200, 404 cuando no se encuentra, 400 por conflictos.
 # -------------------------------------------
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from back.models.users import UserIn, UserOut
 from back.domain.users.create import create_user
 
 router = APIRouter()
 
-@router.post("/api/v1/users", response_model=UserOut)
+@router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user_endpoint(user: UserIn):
-    new_user = create_user(user, created_by="system")
-    return new_user
+    try:
+        new_user = create_user(user, created_by="system")
+        return new_user
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
