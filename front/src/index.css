@@ -1,3 +1,413 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* src/index.css */
+
+/* --- Variables de Color (Basadas en tu paleta) --- */
+:root {
+    --color-black: #000000;
+    --color-dark-red-1: #1a0000; /* Fondo más sutil (Elegancia) */
+    --color-dark-red-2: #8b0000; /* Elementos de peligro/pasión */
+    --color-gold: #d4af37;       /* Lujo/Principal */
+    --color-gold-light: #f4d03f; /* Brillo del oro */
+    --color-silver: #c0c0c0;     /* Sofisticación/Secundario */
+    --color-white: #ffffff;
+}
+
+/* --- Estilos Globales --- */
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif; 
+    background-color: var(--color-black);
+    color: var(--color-white);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-x: hidden; /* Previene scroll horizontal por decoraciones */
+}
+
+/* -------------------------------------- */
+/* --- LOGIN PAGE STYLES (LoginPage.jsx) --- */
+/* -------------------------------------- */
+
+.auth-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+
+/* --- Formulario de Login --- */
+.login-form {
+    background-color: var(--color-dark-red-1);
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.4); /* Sombra con color Oro */
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    position: relative;
+    z-index: 10;
+    border: 1px solid var(--color-gold);
+    /* Asegura que no esté alineado a la izquierda por márgenes previos */
+    margin: auto;
+}
+
+/* --- Logo y Título --- */
+.logo {
+    margin-bottom: 30px;
+}
+
+.logo-icon {
+    font-size: 3em;
+    color: var(--color-gold);
+}
+
+.logo h1 {
+    font-size: 2.5em;
+    margin: 5px 0 0 0;
+    color: var(--color-gold-light);
+    text-shadow: 0 0 5px var(--color-black);
+}
+
+.logo .subtitle {
+    margin: 0;
+    color: var(--color-silver);
+    font-size: 1.1em;
+    letter-spacing: 5px;
+}
+
+.title-mode {
+    font-size: 1.8em;
+    font-weight: bold;
+    margin: 0 0 20px 0;
+    color: var(--color-gold-light);
+    text-shadow: 0 0 5px var(--color-dark-red-2);
+}
+
+/* --- Inputs --- */
+.login-form label {
+    display: block;
+    margin-bottom: 20px;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid var(--color-gold);
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.6); 
+    color: var(--color-white);
+    font-size: 1em;
+    box-sizing: border-box;
+    transition: all 0.3s;
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: var(--color-gold-light);
+    box-shadow: 0 0 10px rgba(244, 208, 63, 0.8);
+}
+
+.login-form input::placeholder {
+    color: var(--color-silver);
+}
+
+/* --- Botones --- */
+.login-form button {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s;
+    margin-bottom: 15px;
+}
+
+/* Botón principal (Iniciar Sesión / Registrar y Entrar) */
+.primary-btn {
+    background-color: var(--color-gold);
+    color: var(--color-black);
+}
+
+.primary-btn:hover {
+    background-color: var(--color-gold-light);
+    box-shadow: 0 5px 15px rgba(244, 208, 63, 0.5);
+}
+
+/* --- Enlace Olvidaste Contraseña --- */
+.forgot-password a {
+    color: var(--color-silver);
+    text-decoration: none;
+    font-size: 0.9em;
+    display: block;
+    margin-bottom: 20px;
+    transition: color 0.3s;
+}
+
+.forgot-password a:hover {
+    color: var(--color-gold-light);
+}
+
+/* --- Separador --- */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 20px 0;
+    color: var(--color-silver);
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--color-dark-red-2);
+}
+
+.divider:not(:empty)::before {
+    margin-right: .5em;
+}
+
+.divider:not(:empty)::after {
+    margin-left: .5em;
+}
+
+/* --- Botón para Alternar Modo (Registro/Login) --- */
+.secondary-btn {
+    background-color: var(--color-dark-red-2); /* Rojo Oscuro */
+    color: var(--color-white);
+    border: 1px solid var(--color-silver);
+}
+
+.secondary-btn:hover {
+    background-color: #a30000; 
+    border-color: var(--color-gold);
+}
+
+.toggle-mode-btn {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* --- Decoraciones de Fondo (solo en Login) --- */
+.cards-decoration {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    font-size: 10em;
+    opacity: 0.2;
+    transform: rotate(-20deg);
+    color: var(--color-silver);
+    z-index: 5;
+}
+
+.chips-decoration {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle at 30% 30%, var(--color-gold-light), var(--color-gold) 40%, var(--color-dark-red-2) 80%);
+    border-radius: 50%;
+    opacity: 0.2;
+    transform: rotate(45deg);
+    z-index: 5;
+    box-shadow: 0 0 20px var(--color-gold);
+}
+
+/* -------------------------------------- */
+/* --- CASINO PAGE STYLES (Casinos.jsx) --- */
+/* -------------------------------------- */
+
+/* Esto sobrescribe el 'body' para que el contenido de casino ocupe todo */
+body {
+    display: block; 
+    padding: 0;
+}
+
+.casino-layout {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    background-color: var(--color-black);
+    min-height: 100vh;
+}
+
+/* --- Encabezado y Navegación --- */
+.casino-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    background-color: var(--color-dark-red-1);
+    border-bottom: 2px solid var(--color-gold);
+    color: var(--color-white);
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-icon {
+    font-size: 2em;
+    color: var(--color-gold);
+}
+
+.logo-section h2 {
+    margin: 0;
+    color: var(--color-gold-light);
+    font-size: 1.5em;
+}
+
+.casino-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-link {
+    color: var(--color-silver);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-link:hover {
+    color: var(--color-gold-light);
+}
+
+.logout-btn {
+    background-color: var(--color-dark-red-2);
+    color: var(--color-white);
+    border: 1px solid var(--color-dark-red-2);
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.logout-btn:hover {
+    background-color: #a30000;
+    border-color: var(--color-gold);
+}
+
+/* --- Contenido Principal --- */
+.casino-main {
+    padding: 40px;
+}
+
+.welcome-banner {
+    text-align: center;
+    margin-bottom: 50px;
+    padding: 30px;
+    background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(26,0,0,0.7));
+    border-radius: 10px;
+    border: 1px solid var(--color-dark-red-2);
+}
+
+.welcome-banner h1 {
+    color: var(--color-gold-light);
+    margin-top: 0;
+}
+
+.balance-amount {
+    font-size: 1.5em;
+    color: var(--color-gold);
+    font-weight: bold;
+}
+
+.section-title {
+    color: var(--color-silver);
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--color-dark-red-2);
+    padding-bottom: 10px;
+}
+
+/* --- Grid de Juegos --- */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+.game-card {
+    background-color: var(--color-dark-red-1);
+    border: 1px solid var(--color-dark-red-2);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s, border-color 0.3s;
+}
+
+.game-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--color-gold);
+}
+
+.game-icon {
+    font-size: 4em;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.game-card h3 {
+    color: var(--color-white);
+    margin: 10px 0 20px 0;
+}
+
+.play-btn {
+    background-color: var(--color-gold);
+    color: var(--color-black);
+    font-weight: bold;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.play-btn:hover {
+    background-color: var(--color-gold-light);
+}
+
+
+/* -------------------------------------- */
+/* --- Media Query para Responsive --- */
+/* -------------------------------------- */
+
+@media (max-width: 768px) {
+    /* Login */
+    .login-form {
+        padding: 30px 20px;
+    }
+
+    .cards-decoration, .chips-decoration {
+        display: none; /* Ocultar decoraciones complejas en móviles */
+    }
+
+    /* Casino */
+    .casino-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 15px 20px;
+        gap: 15px;
+    }
+
+    .casino-nav {
+        width: 100%;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .casino-main {
+        padding: 20px;
+    }
+}

@@ -106,6 +106,45 @@ Este endpoint recibe las credenciales o datos del usuario y retorna un token o l
 | `username` | `str` | Nombre de usuario.      |
 | `password` | `str` | Contraseña del usuario. |
 
+## Usuarios — Creación
+
+### POST `/api/v1/users`
+
+Permite crear un usuario nuevo.
+
+- Body (`UserIn`):
+  - `username` (str, obligatorio, único, trim)
+  - `password` (str, obligatorio)
+  - `role` (str, opcional, default `operador`; valores permitidos: `admin`, `operador`, `soporte`)
+  - `is_active` (bool, default true)
+
+- Validaciones:
+  - Username único (400 si ya existe)
+  - Role dentro del conjunto permitido (400 si inválido)
+  - Password no vacía
+
+- Respuesta (201, `UserOut`):
+  - `{ id, username, role, is_active }`
+  - Nunca expone `password`.
+
+Ejemplo:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/users" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "username": "nuevo_user",
+        "password": "secreta",
+        "role": "operador"
+      }'
+```
+
+Respuesta exitosa:
+
+```json
+{
+  "id": 7,
+  "username": "nuevo_user",
 ## Usuarios — Actualización
 
 ### PUT `/api/v1/users/{user_id}`

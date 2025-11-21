@@ -34,6 +34,7 @@
 #     u otro setup, documentarlo aquí con claridad (pero mantenerlo mínimo por ser académico).
 # ----------------------------------------
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .api.router import api_router
 
@@ -47,6 +48,16 @@ def create_app() -> FastAPI:
         Configured application ready to run with Uvicorn.
     """
     app = FastAPI(title="Demo Cuadre Casino", version="0.1.0")
+
+    # Configuración CORS para permitir peticiones desde el front (Vite por defecto en 5173)
+    allowed_origins = ["*"]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @app.get("/health")
     def health() -> dict[str, str]:

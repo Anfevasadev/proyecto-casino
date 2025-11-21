@@ -1,55 +1,75 @@
 import pandas as pd
 from typing import Optional, Dict, Any
+from pathlib import Path
 
-RUTA_DATOS = "data/users.csv"
+CSV_PATH = Path("data/users.csv")
+
+EXPECTED_COLUMNS = [
+    "id",
+    "username",
+    "password",
+    "role",
+    "is_active",
+    "is_deleted",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by",
+    "deleted_at",
+    "deleted_by",
+]
 
 
 def _read_df() -> pd.DataFrame:
-    try:
-        df = pd.read_csv(RUTA_DATOS)
-    except FileNotFoundError:
-        # Crear DF vacío con columnas esperadas si no existe
-        cols = [
-            "id",
-            "username",
-            "password",
-            "role",
-            "is_active",
-            "is_deleted",
-            "created_at",
-            "created_by",
-            "updated_at",
-            "updated_by",
-            "deleted_at",
-            "deleted_by",
-        ]
-        df = pd.DataFrame(columns=cols)
-    return df
-
-
-def _write_df(df: pd.DataFrame) -> None:
-    df.to_csv(RUTA_DATOS, index=False)
-
-
+    if CSV_PATH.exists():
+        df = pd.read_csv(CSV_PATH)
+    else:
+        df = pd.DataFrame(columns=EXPECTED_COLUMNS)
+    # Asegurar columnas completas
+    for col in EXPECTED_COLUMNS:
+        if col not in df.columns:
+            df[col] = None
+    return df[EXPECTED_COLUMNS]
+  
 def _to_bool(value: Any) -> bool:
     return str(value).lower() == "true"
+  
+def _write_df(df: pd.DataFrame) -> None:
+    df.to_csv(CSV_PATH, index=False)
 
+
+def next_id() -> int:
+    df = _read_df()
+    if df.empty:
+        return 1
+    # Tomar solo ids válidos numéricos
+    ids = [int(x) for x in df["id"].dropna().tolist() if str(x).strip() != ""]
+    return (max(ids) + 1) if ids else 1
+
+def username_exists(username: str) -> bool:
+    df = _read_df()
+    subset = df[(df["username"] == username) & (df["is_deleted"].astype(str).str.lower() != "true")]
+    return not subset.empty
+
+def insert_user(row: Dict[str, Any]) -> Dict[str, Any]:
+    df = _read_df()
+    if username_exists(row["username"]):
+        raise ValueError("Username ya existe")
+    df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
+    _write_df(df)
+    return row
 
 def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
-    try:
-        df = _read_df()
-        user_data = df[df["username"] == username]
-        if not user_data.empty:
-            user_dict = user_data.iloc[0].to_dict()
-            user_dict["id"] = int(user_dict["id"]) if str(user_dict.get("id", "")).strip() else None
-            user_dict["is_active"] = _to_bool(user_dict.get("is_active", False))
-            return user_dict
+    df = _read_df()
+    subset = df[df["username"] == username]
+    if subset.empty:
         return None
-    except Exception as e:
-        print(f"Error al leer el repositorio de usuarios: {e}")
-        return None
-
-
+    user = subset.iloc[0].to_dict()
+    # Normalizar tipos
+    user["id"] = int(user["id"]) if str(user.get("id", "")).strip() else None
+    user["is_active"] = str(user.get("is_active", "false")).lower() == "true"
+    return user
+  
 def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
     df = _read_df()
     rows = df[df["id"] == user_id]
@@ -59,16 +79,7 @@ def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
     row["id"] = int(row["id"]) if str(row.get("id", "")).strip() else None
     row["is_active"] = _to_bool(row.get("is_active", False))
     return row
-
-
-def username_exists(username: str, exclude_id: Optional[int] = None) -> bool:
-    df = _read_df()
-    mask = df["username"] == username
-    if exclude_id is not None:
-        mask &= df["id"] != exclude_id
-    return not df[mask].empty
-
-
+  
 def update_user_row(user_id: int, cambios: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     df = _read_df()
     idx = df.index[df["id"] == user_id]
