@@ -89,7 +89,7 @@
         }
 
         return (
-          <>
+          <div className="auth-screen">
             <div className="cards-decoration">🃏</div>
             <div className="chips-decoration" />
             <form onSubmit={handleSubmit} className="login-form">
@@ -150,6 +150,6 @@
                 {isRegisterMode ? 'Volver a Iniciar Sesión' : 'Crear una Cuenta'}
               </button>
             </form>
-          </>
+          </div>
         )
       }
