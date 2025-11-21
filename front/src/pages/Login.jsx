@@ -13,168 +13,143 @@
          o iniciando sesión.
        - error: para almacenar cualquier mensaje de error de la API.
     5. Definir dos funciones asíncronas:
-       - handleRegister: envía una solicitud POST a '/api/v1/auth/register' con
-         { name, username, password }. Si es exitoso, navegue al inicio de sesión
-         o inicie automáticamente la sesión del usuario.
-       - handleLogin: envía una solicitud POST a '/api/v1/auth/login' con
-         { username, password }. Si es exitoso, navegue a '/casinos'.
-    6. Crear un formulario con entradas para name (solo mostrar cuando isRegistering es verdadero),
-       username y password. Vincule cada entrada a su variable de estado respectiva.
-    7. Agregue un botón de envío que llame a handleRegister o handleLogin según el
-       modo.
-    8. Proporcione un enlace o botón que alterne entre los modos de inicio de sesión y registro.
-    9. Mostrar mensajes de error si la API devuelve un error (por ejemplo, credenciales inválidas).
-    10. Usar clases de Tailwind CSS para estilizar el formulario e inputs.
+      /*
+        Esta página maneja la autenticación del usuario: inicio de sesión y registro.
 
-  Nuevamente, deje estas instrucciones solo como comentarios; no implemente el código aquí.
-*/
+        Pasos a implementar (documentación histórica, ya implementado abajo):
+          1. Importar React hooks useState.
+          2. Importar useNavigate de react-router-dom.
+          3. Importar axios (instancia) para solicitudes HTTP.
+          4. Variables de estado: username, password, role, isRegisterMode, error, loading.
+          5. Funciones asíncronas: handleRegister (POST /api/v1/users) y handleLogin (POST /api/v1/login).
+          6. Formulario con inputs controlados y select de rol en registro.
+          7. Botones para enviar y alternar modo.
+          8. Mostrar mensajes de error si la API falla.
+          9. Tailwind para estilos.
+      */
 
-// TODO: Implementar la página de Login según las instrucciones anteriores.
+      import React, { useState } from 'react'
+      import { useNavigate } from 'react-router-dom'
+      import '../index.css'
+      import client from '../api/client'
 
+      export default function LoginPage() {
+        const [isRegisterMode, setIsRegisterMode] = useState(false)
+        const [formData, setFormData] = useState({ username: '', password: '', role: 'operador' })
+        const [error, setError] = useState('')
+        const [loading, setLoading] = useState(false)
+        const navigate = useNavigate()
 
+        const handleChange = (e) => {
+          const { name, value } = e.target
+          setFormData((prev) => ({ ...prev, [name]: value }))
+        }
 
-/*
-  Pantalla de autenticación. Este componente maneja tanto el inicio
-  de sesión como el registro. Utiliza ``useState`` para almacenar el
-  estado del formulario y si el usuario está en modo login o registro.
-  Se utilizan llamadas HTTP con Axios para comunicarse con el backend.
+        const toggleMode = () => {
+          setError('')
+          setIsRegisterMode((prev) => !prev)
+        }
 
-  useNavigate proviene de react‑router y permite redirigir al usuario
-  después de un inicio de sesión exitoso.
-*/
+        const handleLogin = async () => {
+          setLoading(true)
+          setError('')
+          try {
+            const { username, password } = formData
+            await client.post('/login', { username, password })
+            navigate('/casinos')
+          } catch (err) {
+            setError(err.message || 'Error de autenticación')
+          } finally {
+            setLoading(false)
+          }
+        }
 
-// src/pages/Login.jsx (o LoginPage.jsx)
+        const handleRegister = async () => {
+          setLoading(true)
+          setError('')
+          try {
+            const { username, password, role } = formData
+            await client.post('/users', { username, password, role, is_active: true })
+            await handleLogin()
+          } catch (err) {
+            setError(err.message || 'Error al registrar')
+          } finally {
+            setLoading(false)
+          }
+        }
 
-// src/pages/Login.jsx (o LoginPage.jsx)
-import React, { useState } from 'react'
-import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
-import '../index.css' // Importa los estilos de casino
+        const handleSubmit = async (e) => {
+          e.preventDefault()
+          if (loading) return
+          if (isRegisterMode) {
+            await handleRegister()
+          } else {
+            await handleLogin()
+          }
+        }
 
-/*
- * Pantalla de autenticación (Login y Registro).
- * Utiliza los hooks de React para manejar el estado del formulario y Axios
- * para la comunicación con el backend (simulado).
- */
-
-export default function LoginPage() {
-  // Flag para alternar entre login y registro
-  const [isRegisterMode, setIsRegisterMode] = useState(false)
-  // Estado del formulario. 'name' sólo se usa en modo registro.
-  const [formData, setFormData] = useState({ name: '', username: '', password: '' })
-  const navigate = useNavigate()
-
-  // Manejador para cambiar los valores de los inputs
-  const handleChange = (event) => {
-    const { name, value } = event.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  // Manejador para alternar entre login y registro
-  const toggleMode = () => setIsRegisterMode((prev) => !prev)
-
-  // Envío del formulario.
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    
-    // Utilizamos una simulación de alerta ya que el backend no está disponible
-    if (isRegisterMode) {
-      console.log('Simulación de Registro:', formData)
-      // await axios.post('/api/v1/auth/register', formData)
-      alert('Registro exitoso. Inicia sesión ahora.')
-      setIsRegisterMode(false)
-    } else {
-      console.log('Simulación de Login:', { username: formData.username, password: formData.password })
-      // await axios.post('/api/v1/auth/login', { username: formData.username, password: formData.password })
-      
-      // Simulación: si no hay error, navegamos.
-      alert(`¡Bienvenido ${formData.username}!`)
-      navigate('/casinos')
-    }
-    
-    /* Manejo real de errores de Axios (comentado mientras no hay backend)
-    try {
-      // ... código de Axios aquí
-    } catch (err) {
-      alert(err?.response?.data?.detail || 'Error inesperado')
-    }
-    */
-  }
-
-  return (
-    <>
-      {/* Decoraciones de fondo (definidas en index.css) */}
-      <div className="cards-decoration">🃏</div>
-      <div className="chips-decoration"></div>
-
-      <form onSubmit={handleSubmit} className="login-form">
-        
-        {/* Logo del casino */}
-        <div className="logo">
-          <div className="logo-icon">👑</div>
-          <h1>Royal Fortune</h1>
-          <p className="subtitle">Casino</p>
-        </div>
-
-        {/* Título dinámico para el modo */}
-        <h2 className="title-mode">
-          {isRegisterMode ? 'Crear Cuenta' : 'Acceder al Juego'}
-        </h2>
-
-        {isRegisterMode && (
-          <label htmlFor="name">
-            <input
-              id="name"
-              name="name"
-              type="text"
-              placeholder="Nombre completo"
-              value={formData.name}
-              onChange={handleChange}
-            />
-          </label>
-        )}
-
-        <label htmlFor="username">
-          <input
-            id="username"
-            name="username"
-            type="text"
-            placeholder="Usuario"
-            value={formData.username}
-            onChange={handleChange}
-          />
-        </label>
-
-        <label htmlFor="password">
-          <input
-            id="password"
-            name="password"
-            type="password"
-            placeholder="Contraseña"
-            value={formData.password}
-            onChange={handleChange}
-          />
-        </label>
-
-        <button type="submit" className="primary-btn">
-          {isRegisterMode ? 'Registrar y Entrar' : 'Iniciar Sesión'}
-        </button>
-
-        <div className="forgot-password"></div>
-
-        <div className="divider">
-          <span>O</span>
-        </div>
-
-        {/* Botón de alternancia Login/Registro */}
-        <button
-          type="button"
-          className="secondary-btn toggle-mode-btn"
-          onClick={toggleMode}
-        >
-          {isRegisterMode ? 'Volver a Iniciar Sesión' : 'Crear una Cuenta'}
-        </button>
-      </form>
-    </>
-  )
-}
+        return (
+          <>
+            <div className="cards-decoration">🃏</div>
+            <div className="chips-decoration" />
+            <form onSubmit={handleSubmit} className="login-form">
+              <div className="logo">
+                <div className="logo-icon">👑</div>
+                <h1>Royal Fortune</h1>
+                <p className="subtitle">Casino</p>
+              </div>
+              <h2 className="title-mode">{isRegisterMode ? 'Crear Cuenta' : 'Acceder al Juego'}</h2>
+              {error && <div className="error-msg">{error}</div>}
+              <label htmlFor="username">
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="Usuario"
+                  value={formData.username}
+                  onChange={handleChange}
+                  required
+                />
+              </label>
+              <label htmlFor="password">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Contraseña"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+              </label>
+              {isRegisterMode && (
+                <label htmlFor="role">
+                  <select
+                    id="role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    className="role-select"
+                  >
+                    <option value="operador">Operador</option>
+                    <option value="admin">Admin</option>
+                    <option value="soporte">Soporte</option>
+                  </select>
+                </label>
+              )}
+              <button type="submit" className="primary-btn" disabled={loading}>
+                {loading ? 'Procesando...' : isRegisterMode ? 'Registrar y Entrar' : 'Iniciar Sesión'}
+              </button>
+              <div className="divider"><span>O</span></div>
+              <button
+                type="button"
+                className="secondary-btn toggle-mode-btn"
+                onClick={toggleMode}
+                disabled={loading}
+              >
+                {isRegisterMode ? 'Volver a Iniciar Sesión' : 'Crear una Cuenta'}
+              </button>
+            </form>
+          </>
+        )
+      }
