@@ -32,18 +32,32 @@
 #     a menos que se requiera explícitamente (se sugiere mantener la salida limpia).
 #   - Si se usa Enum para role, documentar su string literal para claridad en OpenAPI.
 # -------------------------------------------
-from pydantic import BaseModel, Field
+from enum import StrEnum
+from pydantic import BaseModel, field_validator
 from typing import Optional
 
+class RoleEnum(StrEnum):
+    admin = "admin"
+    operador = "operador"
+    soporte = "soporte"
+
 class UserIn(BaseModel):
-    username: str = Field(..., min_length=3)
-    password: str = Field(..., min_length=1)
-    role: str
-    is_active: bool = True
-class UserOut(BaseModel):
     username: str
-    role: str
+    password: str
+    role: RoleEnum = RoleEnum.operador
+    is_active: bool = True
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        v2 = v.strip()
+        if not v2:
+            raise ValueError("username no puede estar vacío")
+        return v2
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+    role: RoleEnum
     is_active: bool
-    created_at: str
-    created_by: str
         
