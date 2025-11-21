@@ -30,8 +30,10 @@ def _read_df() -> pd.DataFrame:
         if col not in df.columns:
             df[col] = None
     return df[EXPECTED_COLUMNS]
-
-
+  
+def _to_bool(value: Any) -> bool:
+    return str(value).lower() == "true"
+  
 def _write_df(df: pd.DataFrame) -> None:
     df.to_csv(CSV_PATH, index=False)
 
@@ -44,12 +46,10 @@ def next_id() -> int:
     ids = [int(x) for x in df["id"].dropna().tolist() if str(x).strip() != ""]
     return (max(ids) + 1) if ids else 1
 
-
 def username_exists(username: str) -> bool:
     df = _read_df()
     subset = df[(df["username"] == username) & (df["is_deleted"].astype(str).str.lower() != "true")]
     return not subset.empty
-
 
 def insert_user(row: Dict[str, Any]) -> Dict[str, Any]:
     df = _read_df()
@@ -58,7 +58,6 @@ def insert_user(row: Dict[str, Any]) -> Dict[str, Any]:
     df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
     _write_df(df)
     return row
-
 
 def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
     df = _read_df()
@@ -70,3 +69,32 @@ def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
     user["id"] = int(user["id"]) if str(user.get("id", "")).strip() else None
     user["is_active"] = str(user.get("is_active", "false")).lower() == "true"
     return user
+  
+def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
+    df = _read_df()
+    rows = df[df["id"] == user_id]
+    if rows.empty:
+        return None
+    row = rows.iloc[0].to_dict()
+    row["id"] = int(row["id"]) if str(row.get("id", "")).strip() else None
+    row["is_active"] = _to_bool(row.get("is_active", False))
+    return row
+  
+def update_user_row(user_id: int, cambios: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    df = _read_df()
+    idx = df.index[df["id"] == user_id]
+    if len(idx) == 0:
+        return None
+    i = idx[0]
+
+    allowed_cols = {"username", "password", "role", "is_active", "updated_at", "updated_by"}
+    for k, v in cambios.items():
+        if k in allowed_cols:
+            df.at[i, k] = v
+
+    _write_df(df)
+
+    updated = df.loc[i].to_dict()
+    updated["id"] = int(updated["id"]) if str(updated.get("id", "")).strip() else None
+    updated["is_active"] = _to_bool(updated.get("is_active", False))
+    return updated

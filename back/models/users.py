@@ -49,7 +49,7 @@ class UserIn(BaseModel):
 
     @field_validator("username")
     @classmethod
-    def validate_username(cls, v: str) -> str:
+    def username_non_empty(cls, v: str) -> str:
         v2 = v.strip()
         if not v2:
             raise ValueError("username no puede estar vacío")
@@ -61,3 +61,18 @@ class UserOut(BaseModel):
     role: RoleEnum
     is_active: bool
         
+class UserUpdate(BaseModel):
+	username: Optional[str] = None
+	password: Optional[str] = None
+	role: Optional[RoleEnum] = None
+	is_active: Optional[bool] = None
+
+	@field_validator("username")
+	@classmethod
+	def username_non_empty_if_present(cls, v: Optional[str]) -> Optional[str]:
+		if v is None:
+			return v
+		v2 = v.strip()
+		if not v2:
+			raise ValueError("username no puede estar vacío")
+		return v2

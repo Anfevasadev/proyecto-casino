@@ -1,29 +1,41 @@
-# -------------------------------------------
-# back/domain/users/update.py
-# Función esperada: actualizar_usuario(user_id, cambios, clock, repo, actor)
-#
-# Entradas:
-#   - user_id: int.
-#   - cambios: dict con campos editables (role, is_active, password, username opcional).
-#   - clock: función hora local.
-#   - repo: repositorio users.
-#   - actor: str para auditoría (updated_by).
-#
-# Validaciones:
-#   - Usuario debe existir.
-#   - Si cambia username: verificar que no exista otro con ese username.
-#   - Si cambia role: validar ∈ {'admin','operador','soporte'}.
-#
-# Procesamiento:
-#   1) Cargar usuario.
-#   2) Aplicar cambios permitidos.
-#   3) Actualizar updated_at=clock(), updated_by=actor.
-#   4) Guardar en repo.
-#
-# Salida:
-#   - Dict {id, username, role, is_active} actualizado.
-#
-# Errores:
-#   - NotFoundError si user_id no existe.
-#   - ValueError por duplicado/role inválido.
-# -------------------------------------------
+from typing import Any, Dict
+
+ROLES_PERMITIDOS = {"admin", "operador", "soporte"}
+
+
+class NotFoundError(Exception):
+	pass
+
+
+def update_user(user_id: int, cambios: Dict[str, Any], clock, repo, actor: str) -> Dict[str, Any]:
+	usuario = repo.get_user_by_id(user_id)
+	if not usuario:
+		raise NotFoundError(f"Usuario id={user_id} no existe")
+
+	new_username = cambios.get("username")
+	if new_username and new_username != usuario.get("username"):
+		if repo.username_exists(new_username, exclude_id=user_id):
+			raise ValueError("username ya existe")
+
+	if "role" in cambios and cambios["role"] is not None:
+		role_val = str(cambios["role"]).strip()
+		if role_val not in ROLES_PERMITIDOS:
+			raise ValueError("role inválido; use admin|operador|soporte")
+
+	allowed = {"username", "password", "role", "is_active"}
+	to_update = {k: v for k, v in cambios.items() if k in allowed and v is not None}
+	to_update["updated_at"] = clock()
+	to_update["updated_by"] = actor
+
+	updated = repo.update_user_row(user_id, to_update)
+	if not updated:
+		# Carrera o inconsistencia
+		raise NotFoundError(f"Usuario id={user_id} no existe")
+
+	return {
+		"id": int(updated["id"]),
+		"username": updated["username"],
+		"role": updated["role"],
+		"is_active": bool(updated.get("is_active", False)),
+	}
+

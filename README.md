@@ -145,6 +145,43 @@ Respuesta exitosa:
 {
   "id": 7,
   "username": "nuevo_user",
+## Usuarios — Actualización
+
+### PUT `/api/v1/users/{user_id}`
+
+- Entrada (`JSON`, modelo `UserUpdate`):
+  - `username` (str, opcional; si cambia debe ser único)
+  - `password` (str, opcional)
+  - `role` (str, opcional; uno de: `admin`, `operador`, `soporte`)
+  - `is_active` (bool, opcional)
+
+- Reglas y validaciones:
+  - El usuario debe existir (404 si no existe).
+  - Si cambia `username`, no debe existir otro usuario con ese mismo `username` (400 si duplica).
+  - Si se envía `role`, debe pertenecer a `{admin, operador, soporte}` (400 si inválido).
+  - Se registran `updated_at` y `updated_by` automáticamente (auditoría interna).
+
+- Respuesta (200, `UserOut`):
+  - `id` (int), `username` (str), `role` (str), `is_active` (bool)
+  - Nunca expone `password`.
+
+Ejemplo de petición:
+
+```bash
+curl -X PUT "http://127.0.0.1:8000/api/v1/users/2" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "role": "operador",
+        "is_active": true
+      }'
+```
+
+Ejemplo de respuesta:
+
+```json
+{
+  "id": 2,
+  "username": "user1",
   "role": "operador",
   "is_active": true
 }
