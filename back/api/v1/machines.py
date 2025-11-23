@@ -70,3 +70,81 @@
 #   - El manejo de CSV/pandas se hace en storage/machines_repo.py. Aquí solo orquestamos.
 #   - El borrado lógico es un "toggle" de is_active a false; no se elimina la fila.
 # -------------------------------------------
+# back/api/v1/machines.py
+# back/api/v1/machines.py
+from fastapi import APIRouter, HTTPException, Query
+from typing import List, Optional
+
+from back.models.machines import MachineIn, MachineOut
+from back.storage.machines_repo import MachinesRepo
+
+repo = MachinesRepo()
+router = APIRouter()
+
+@router.post("/", response_model=MachineOut, status_code=201)
+def registrar_maquina(machine: MachineIn, actor: str = "system"):
+    new_id = repo.next_id()
+
+    row = {
+        "id": new_id,
+        "marca": machine.marca,
+        "modelo": machine.modelo,
+        "serial": machine.serial,
+        "asset": machine.asset,
+        "denominacion": machine.denominacion,
+        "estado": str(machine.is_active),
+        "casino_id": machine.place_id
+    }
+
+    repo.add(row, actor)
+
+    return MachineOut(
+        id=new_id,
+        marca=machine.marca,
+        modelo=machine.modelo,
+        serial=machine.serial,
+        asset=machine.asset,
+        denominacion=machine.denominacion,
+        estado=machine.is_active,
+        casino_id=machine.place_id
+    )
+
+
+@router.get("/", response_model=List[MachineOut])
+def listar_maquinas(only_active: Optional[bool] = Query(None)):
+    data = repo.list_all()
+
+    if only_active is not None:
+        data = [m for m in data if str(m["estado"]).lower() == str(only_active).lower()]
+
+    return [
+        MachineOut(
+            id=int(m["id"]),
+            marca=m["marca"],
+            modelo=m["modelo"],
+            serial=m["serial"],
+            asset=m["asset"],
+            denominacion=m["denominacion"],
+            estado=str(m["estado"]).lower() == "true",
+            casino_id=int(m["casino_id"])
+        )
+        for m in data
+    ]
+
+
+@router.get("/{machine_id}", response_model=MachineOut)
+def obtener_maquina(machine_id: int):
+    m = repo.get_by_id(machine_id)
+    if not m:
+        raise HTTPException(status_code=404, detail="Machine not found")
+
+    return MachineOut(
+        id=int(m["id"]),
+        marca=m["marca"],
+        modelo=m["modelo"],
+        serial=m["serial"],
+        asset=m["asset"],
+        denominacion=m["denominacion"],
+        estado=str(m["estado"]).lower() == "true",
+        casino_id=int(m["casino_id"])
+    )

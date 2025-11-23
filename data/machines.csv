@@ -1,1 +1,7 @@
-id,code,denomination_value,place_id,participation_rate,is_active,created_at,created_by,updated_at,updated_by
+id,marca,modelo,serial,asset,denominacion,casino_id,estado,created_at,created_by,updated_at,updated_by
+1,Motorola,IGT,SN2001,A001,100.0,5,True,2025-11-23 05:32:25,system,2025-11-23 05:32:25,system
+2,Motorola,IGT,SN2002,A002,10.0,3,False,2025-11-23 05:34:58,system,2025-11-23 05:34:58,system
+3,Motorola,IGT,SN2003,A004,11.0,3,True,2025-11-23 05:37:20,system,2025-11-23 05:37:20,system
+4,Motorola,IGT,SN2009,A009,11.0,5,True,2025-11-23 05:43:05,system,2025-11-23 05:43:05,system
+5,Motorola,IGT,SN2015,A453,Tragamonedas,1,True,2025-11-23 05:57:42,system,2025-11-23 05:57:42,system
+6,Motorola,IGT,SN20345,A0345,Tragamonedas,5,True,2025-11-23 06:08:00,system,2025-11-23 06:08:00,system
