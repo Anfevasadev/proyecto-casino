@@ -29,12 +29,12 @@ import pandas as pd
 
 
 BASE_DIR = os.path.dirname(__file__)
-# Guardar CSVs en la carpeta `back/storage` en vez de en `back/domain/machines`
-STORAGE_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "..", "storage"))
-os.makedirs(STORAGE_DIR, exist_ok=True)
-MACHINES_CSV = os.path.join(STORAGE_DIR, "machines.csv")
-LOGS_CSV = os.path.join(STORAGE_DIR, "logs.csv")
-MACHINES_STATUS_CSV = os.path.join(STORAGE_DIR, "machines_status.csv")
+# Guardar CSVs en la carpeta raíz `data/` para centralizar los datos
+DATA_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "..", "..", "data"))
+os.makedirs(DATA_DIR, exist_ok=True)
+MACHINES_CSV = os.path.join(DATA_DIR, "machines.csv")
+LOGS_CSV = os.path.join(DATA_DIR, "logs.csv")
+MACHINES_STATUS_CSV = os.path.join(DATA_DIR, "machines_status.csv")
 
 
 def _now(clock: Optional[callable] = None) -> str:
@@ -162,11 +162,14 @@ def inactivar_maquina_por_serial(
 			"actor": actor,
 			"note": "machine_already_inactive",
 		}
+		# Registrar intento en logs
 		append_log(log_entry)
-		row = df.loc[idx].to_dict()
-		# limpiar valores NaN para que sean serializables JSON
-		clean_row = {k: ("" if pd.isna(v) else v) for k, v in row.items()}
-		return clean_row
+		# Indicar error claro al cliente
+		msg = (
+			"Esta máquina ya se encuentra desactivada. "
+			"Por favor revisa la tabla de máquinas para ver el estado de las mismas."
+		)
+		raise ValueError(msg)
 
 	# Marcar inactiva
 	df.at[idx, "is_active"] = "False"

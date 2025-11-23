@@ -16,7 +16,18 @@ from typing import Optional, Dict, Any
 
 import pandas as pd
 
-from .inativation import ensure_data_files, append_log, MACHINES_CSV, LOGS_CSV, MACHINES_STATUS_CSV
+try:
+	# Cuando se importa como paquete
+	from .inativation import ensure_data_files, append_log, MACHINES_CSV, LOGS_CSV, MACHINES_STATUS_CSV
+except Exception:
+	# Permitir ejecución directa del script (python activation.py)
+	# Agregar la raíz del proyecto a sys.path si es necesario y reintentar
+	import sys
+	this_dir = os.path.dirname(__file__)
+	project_root = os.path.abspath(os.path.join(this_dir, "..", "..", ".."))
+	if project_root not in sys.path:
+		sys.path.insert(0, project_root)
+	from back.domain.machines.inativation import ensure_data_files, append_log, MACHINES_CSV, LOGS_CSV, MACHINES_STATUS_CSV
 
 
 def _now() -> str:
@@ -55,7 +66,7 @@ def activar_maquina_por_serial(serial: str, actor: str = "system", note: Optiona
 
 	current_state = str(df.at[idx, "is_active"]).strip().lower()
 	if current_state == "true":
-		# Ya activa: registrar intento y devolver
+		# Ya activa: registrar intento y devolver error informativo
 		log_entry = {
 			"timestamp": timestamp,
 			"action": "activation_attempt_on_already_active",
@@ -67,9 +78,11 @@ def activar_maquina_por_serial(serial: str, actor: str = "system", note: Optiona
 			"note": note or "machine_already_active",
 		}
 		append_log(log_entry)
-		row = df.loc[idx].to_dict()
-		clean = {k: ("" if pd.isna(v) else v) for k, v in row.items()}
-		return clean
+		msg = (
+			"Esta máquina ya se encuentra activa. "
+			"Por favor revisa la tabla de máquinas para ver el estado de las mismas."
+		)
+		raise ValueError(msg)
 
 	# Reactivar
 	df.at[idx, "is_active"] = "True"

@@ -74,12 +74,21 @@
 # back/api/v1/machines.py
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
+from pydantic import BaseModel
 
 from back.models.machines import MachineIn, MachineOut
 from back.storage.machines_repo import MachinesRepo
+from back.domain.machines.inativation import inactivar_maquina_por_serial
+from back.domain.machines.activation import activar_maquina_por_serial
 
 repo = MachinesRepo()
 router = APIRouter()
+
+
+class SerialAction(BaseModel):
+    serial: str
+    actor: Optional[str] = "system"
+    motivo: Optional[str] = None
 
 @router.post("/", response_model=MachineOut, status_code=201)
 def registrar_maquina(machine: MachineIn, actor: str = "system"):
@@ -148,3 +157,23 @@ def obtener_maquina(machine_id: int):
         estado=str(m["estado"]).lower() == "true",
         casino_id=int(m["casino_id"])
     )
+
+
+@router.post("/inactivate")
+def inactivate_machine(payload: SerialAction):
+    try:
+        result = inactivar_maquina_por_serial(
+            payload.serial, actor=payload.actor or "system", motivo=payload.motivo
+        )
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.post("/activate")
+def activate_machine(payload: SerialAction):
+    try:
+        result = activar_maquina_por_serial(payload.serial, actor=payload.actor or "system", note=payload.motivo)
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))

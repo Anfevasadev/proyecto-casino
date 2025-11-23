@@ -40,8 +40,14 @@ from datetime import datetime
 
 class MachinesRepo:
 
-    def __init__(self, filepath="data/machines.csv"):
-        self.filepath = filepath
+    def __init__(self, filepath=None):
+        # Por defecto usar el CSV en la carpeta `data/` del proyecto
+        if filepath:
+            self.filepath = filepath
+        else:
+            base_dir = os.path.dirname(__file__)
+            # desde back/storage -> ../../data/machines.csv
+            self.filepath = os.path.abspath(os.path.join(base_dir, "..", "..", "data", "machines.csv"))
         self._ensure_file()
         self.data = self._load()
 
