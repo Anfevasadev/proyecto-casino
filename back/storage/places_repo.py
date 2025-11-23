@@ -57,7 +57,9 @@ class PlaceStorage:
                 'codigo_casino',
                 'estado',
                 'created_at',
-                'created_by'
+                'created_by',
+                'updated_at',
+                'updated_by'
             ])
             df.to_csv(PLACES_CSV, index=False)
 
@@ -115,7 +117,9 @@ class PlaceStorage:
             'codigo_casino': codigo_casino.upper(),
             'estado': True,
             'created_at': timestamp,
-            'created_by': created_by
+            'created_by': created_by,
+            'updated_at': None,
+            'updated_by': None
         }
         
         # Agregar al CSV
@@ -123,3 +127,98 @@ class PlaceStorage:
         df.to_csv(PLACES_CSV, index=False)
         
         return new_place
+
+    
+    @staticmethod
+    def inactivar_casino(codigo_casino: int, actor: str = "system") -> bool:
+
+        """
+        Marca un casino como INACTIVO (estado = False) y registra auditoría.
+        Retorna True si se desactivó, lanza KeyError si no existe.
+        """
+
+        PlaceStorage._ensure_csv_exists()
+        df = pd.read_csv(PLACES_CSV)
+
+        if codigo_casino not in df["id"].values:
+            raise KeyError(f"No existe un casino con ID {codigo_casino}")
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Asegurar columnas de auditoría si faltan
+        if 'updated_at' not in df.columns:
+            df['updated_at'] = None
+        if 'updated_by' not in df.columns:
+            df['updated_by'] = None
+
+        # Cambiar estado a falso y registrar auditoría
+        df.loc[df["id"] == codigo_casino, "estado"] = False
+        df.loc[df["id"] == codigo_casino, "updated_at"] = timestamp
+        df.loc[df["id"] == codigo_casino, "updated_by"] = actor
+
+        df.to_csv(PLACES_CSV, index=False)
+
+        return True
+
+    # Alias y helpers para la API / dominio
+    @staticmethod
+    def inactivar(codigo_casino: int, actor: str = "system") -> bool:
+        """Alias más corto esperado por capas superiores."""
+        return PlaceStorage.inactivar_casino(codigo_casino, actor=actor)
+
+    @staticmethod
+    def listar(only_active: bool = True, limit: int | None = None, offset: int = 0) -> list:
+        """Devuelve lista de lugares como dicts. Filtra por activos por defecto."""
+        PlaceStorage._ensure_csv_exists()
+        df = pd.read_csv(PLACES_CSV)
+
+        if df.empty:
+            return []
+
+        if only_active and 'estado' in df.columns:
+            df = df[df['estado'] == True]
+
+        # Orden por id para consistencia
+        if 'id' in df.columns:
+            df = df.sort_values('id')
+
+        if offset:
+            df = df.iloc[offset:]
+        if limit is not None:
+            df = df.iloc[:limit]
+
+        # Normalizar filas a dicts
+        return df.fillna('').to_dict(orient='records')
+
+    @staticmethod
+    def obtener_por_id(place_id: int) -> dict | None:
+        PlaceStorage._ensure_csv_exists()
+        df = pd.read_csv(PLACES_CSV)
+
+        if df.empty:
+            return None
+
+        row = df.loc[df['id'] == place_id]
+        if row.empty:
+            return None
+
+        return row.iloc[0].to_dict()
+
+    @staticmethod
+    def existe_nombre(nombre: str, exclude_id: int | None = None) -> bool:
+        """Verifica si ya existe un nombre (case-insensitive)."""
+        PlaceStorage._ensure_csv_exists()
+        df = pd.read_csv(PLACES_CSV)
+
+        if df.empty:
+            return False
+
+        comp = df['nombre'].astype(str).str.strip().str.lower()
+        target = nombre.strip().lower()
+
+        if exclude_id is not None and 'id' in df.columns:
+            df = df[df['id'] != exclude_id]
+            comp = df['nombre'].astype(str).str.strip().str.lower()
+
+        return target in comp.values
+

@@ -57,3 +57,25 @@
 #   - fastapi (APIRouter, HTTPException, status)
 #   - pydantic (modelos)
 # -------------------------------------------
+
+from fastapi import APIRouter, HTTPException
+from back.storage.places_repo import PlaceStorage
+
+router = APIRouter()
+
+@router.put("/casino/{casino_id}/inactivar")
+def inactivar_casino(casino_id: int, actor: str = "system"):
+    """
+    Marca un casino como inactivo sin eliminarlo.
+    Usa PlaceStorage.inactivar() para actualizar el CSV y registrar auditoría.
+    """
+    try:
+        PlaceStorage.inactivar(casino_id, actor=actor)
+        return {
+            "mensaje": "Casino inactivado correctamente",
+            "id": casino_id,
+            "actor": actor
+        }
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Casino no encontrado")
+
