@@ -36,20 +36,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.router import api_router
-
+from .api.router import api_router  # Router principal de la API
 
 def create_app() -> FastAPI:
-    """Factory to create and configure the FastAPI application.
+    """
+    Factory para crear y configurar la aplicación FastAPI.
 
     Returns
     -------
     FastAPI
-        Configured application ready to run with Uvicorn.
+        Aplicación configurada lista para ejecutar con Uvicorn.
     """
     app = FastAPI(title="Demo Cuadre Casino", version="0.1.0")
 
-    # Configuración CORS para permitir peticiones desde el front (Vite por defecto en 5173)
+    # Configuración CORS para permitir peticiones desde el front
     allowed_origins = ["*"]
     app.add_middleware(
         CORSMiddleware,
@@ -59,26 +59,15 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Endpoint de salud simple
     @app.get("/health")
     def health() -> dict[str, str]:
-        """Simple health check endpoint.
-
-        Returns a JSON payload indicating the service is running.
-
-        Returns
-        -------
-        dict[str, str]
-            A status payload containing a static message.
-        """
+        """Simple health check endpoint."""
         return {"status": "ok"}
 
-    # Mount the versioned API under /api. Additional routers may be added
-    # inside api/router.py.
+    # Incluir el router principal bajo /api
     app.include_router(api_router, prefix="/api")
     return app
 
-
-# Application instance used by Uvicorn. When running ``uvicorn back.main:app``
-# Uvicorn will import this module and look for an ``app`` attribute. The
-# ``create_app`` factory is called to ensure fresh configuration on import.
+# Instancia de aplicación para Uvicorn
 app = create_app()
