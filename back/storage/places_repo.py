@@ -132,16 +132,33 @@ class PlaceStorage:
     @staticmethod
     def inactivar_casino(codigo_casino: int, actor: str = "system") -> bool:
 
+        """
+        Marca un casino como INACTIVO (estado = False) y registra auditoría.
+        Retorna True si se desactivó, lanza KeyError si no existe.
+        """
+
         PlaceStorage._ensure_csv_exists()
         df = pd.read_csv(PLACES_CSV)
 
-        if 'estado' in df.columns:
-            df['estado'] = df['estado'].astype(str).str.lower().str.strip().map({
-                'true': True, 'false': False, '1': True, '0': False
-            }) 
-
         if codigo_casino not in df["id"].values:
             raise KeyError(f"No existe un casino con ID {codigo_casino}")
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Asegurar columnas de auditoría si faltan
+        if 'updated_at' not in df.columns:
+            df['updated_at'] = None
+        if 'updated_by' not in df.columns:
+            df['updated_by'] = None
+
+        # Cambiar estado a falso y registrar auditoría
+        df.loc[df["id"] == codigo_casino, "estado"] = False
+        df.loc[df["id"] == codigo_casino, "updated_at"] = timestamp
+        df.loc[df["id"] == codigo_casino, "updated_by"] = actor
+
+        df.to_csv(PLACES_CSV, index=False)
+
+        return True
 
     # Alias y helpers para la API / dominio
     @staticmethod
@@ -151,48 +168,41 @@ class PlaceStorage:
 
     @staticmethod
     def listar(only_active: bool = True, limit: int | None = None, offset: int = 0) -> list:
+        """Devuelve lista de lugares como dicts. Filtra por activos por defecto."""
         PlaceStorage._ensure_csv_exists()
         df = pd.read_csv(PLACES_CSV)
 
         if df.empty:
             return []
-        
-        if 'estado' in df.columns:
-            df['estado'] = df['estado'].astype(str).str.lower().str.strip().map({
-                'true': True, 
-                'false': False, 
-                '1': True, 
-                '0': False
-            }).fillna(False) 
 
         if only_active and 'estado' in df.columns:
             df = df[df['estado'] == True]
 
-         #resto del codigo 
+        # Orden por id para consistencia
+        if 'id' in df.columns:
+            df = df.sort_values('id')
 
+        if offset:
+            df = df.iloc[offset:]
+        if limit is not None:
+            df = df.iloc[:limit]
+
+        # Normalizar filas a dicts
         return df.fillna('').to_dict(orient='records')
 
     @staticmethod
     def obtener_por_id(place_id: int) -> dict | None:
         PlaceStorage._ensure_csv_exists()
         df = pd.read_csv(PLACES_CSV)
-        
+
         if df.empty:
             return None
-        
-        if 'estado' in df.columns:
-            df['estado'] = df['estado'].astype(str).str.lower().str.strip().map({
-                'true': True, 
-                'false': False, 
-                '1': True, 
-                '0': False
-            }).fillna(False) 
 
         row = df.loc[df['id'] == place_id]
         if row.empty:
             return None
-        
-        return row.iloc[0].fillna('').to_dict()
+
+        return row.iloc[0].to_dict()
 
     @staticmethod
     def existe_nombre(nombre: str, exclude_id: int | None = None) -> bool:
@@ -211,4 +221,3 @@ class PlaceStorage:
             comp = df['nombre'].astype(str).str.strip().str.lower()
 
         return target in comp.values
-
