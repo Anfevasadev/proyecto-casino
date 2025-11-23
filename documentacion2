@@ -1,1 +1,9 @@
 ##Documentacion de lo realizado hasta maximo el 23/11/25
+#Nombre: Jose David Cano Marin
+#Fecha: 22/11/25
+#back/models/places.py (Define los modelos de datos (esquemas) para los casinos usando Pydantic)
+#------------------------------------
+#back/storage/place_repo.py (Maneja toda la interacción con el archivo CSV (leer, escribir, guardar datos).
+#------------------------------------
+#back/domain/places/create.py (Contiene la lógica de negocio (las reglas del sistema).
+#------------------------------------
