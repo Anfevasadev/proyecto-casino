@@ -79,3 +79,25 @@ def inactivar_casino(casino_id: int, actor: str = "system"):
         raise HTTPException(status_code=404, detail="Casino no encontrado")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+from fastapi import APIRouter, HTTPException
+from back.models.places import PlaceIn, PlaceOut
+from back.domain.places.create import PlaceDomain
+
+router = APIRouter()
+
+
+@router.post("/casino", response_model=PlaceOut)
+def crear_casino(place: PlaceIn, actor: str = "system"):
+    """
+    Crea un nuevo casino usando la capa de dominio.
+    """
+    try:
+        created = PlaceDomain.create_place(place, created_by=actor)
+        return created
+    except ValueError as e:
+        # Errores de negocio (código duplicado, validación)
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        # Errores inesperados
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
