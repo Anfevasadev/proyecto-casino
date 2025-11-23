@@ -86,9 +86,11 @@ def activar_maquina_por_serial(serial: str, actor: str = "system", note: Optiona
 
 	# Reactivar
 	df.at[idx, "is_active"] = "True"
+	# Sincronizar campo 'estado' también
+	if "estado" in df.columns:
+		df.at[idx, "estado"] = "True"
 	df.at[idx, "updated_at"] = timestamp
 	df.at[idx, "updated_by"] = actor
-
 	df.to_csv(MACHINES_CSV, index=False)
 
 	log_entry = {

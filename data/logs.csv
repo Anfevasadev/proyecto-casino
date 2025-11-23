@@ -18,3 +18,8 @@ timestamp,action,machine_id,serial,inactivation_token,motivo,actor,note
 2025-11-23 08:07:47,inactivate_machine,7,string,3b87802cb3124885a32fc949a6dfee4b,string,system,
 2025-11-23 08:07:54,inactivation_attempt_on_already_inactive,7,string,42f3bc0b4add4e5987b00bc7ef0545e3,string,system,machine_already_inactive
 2025-11-23 08:08:06,activate_machine,7,string,,reactivacion_manual,system,string
+2025-11-23 21:36:55,activate_machine,1,SN2001,,reactivacion_manual,system,xd
+2025-11-23 22:37:19,inactivate_machine,1,SN2001,94f42b175d534603a731cd4a37bf5fd1,xd,system,
+2025-11-23 22:39:53,inactivation_attempt_on_already_inactive,1,SN2001,ed0548059dd54fc6a76fa334ac0f865e,h,system,machine_already_inactive
+2025-11-23 22:40:19,activate_machine,1,SN2001,,reactivacion_manual,system,string
+2025-11-23 22:41:24,inactivate_machine,2,SN2002,d5c67c15e8ed4f5d93ebd1647a6c3466,string,system,

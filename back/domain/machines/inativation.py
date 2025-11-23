@@ -173,6 +173,9 @@ def inactivar_maquina_por_serial(
 
 	# Marcar inactiva
 	df.at[idx, "is_active"] = "False"
+	# Sincronizar campo 'estado' también
+	if "estado" in df.columns:
+		df.at[idx, "estado"] = "False"
 	df.at[idx, "updated_at"] = timestamp
 	df.at[idx, "updated_by"] = actor
 	save_machines_df(df)

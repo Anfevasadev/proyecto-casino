@@ -1,85 +1,110 @@
-# -------------------------------------------
-# back/api/v1/counters.py
-# Propósito:
-#   - Exponer endpoints HTTP (FastAPI) para registrar y consultar "contadores"
-#     por máquina: IN, OUT, JACKPOT, BILLETERO.
-#
-# Router esperado:
-#   - Declarar "router" = APIRouter() y definir las rutas bajo /api/v1/counters.
-#
-# Modelos:
-#   - Importar desde back/models/counters.py:
-#       * CounterIn  (entrada para crear)
-#       * CounterUpdate (si se habilita corrección)
-#       * CounterOut (respuesta al cliente)
-#
-# Dependencias:
-#   - from fastapi import APIRouter, HTTPException, Query, Path, Depends, status
-#   - from ..deps import get_repos, pagination_params (si se usa)
-#   - Repos necesarios (obtenidos vía get_repos):
-#       * counters_repo (lectura/escritura CSV de counters)
-#       * machines_repo (validar existencia y estado de la máquina)
-#       * logs_repo (opcional para auditoría de cambios)
-#   - Funciones de dominio correspondientes en back/domain/counters/*:
-#       * create_counter, listar_counters, obtener_counter, actualizar_counter (opcional)
-#
-# Endpoints sugeridos:
-#   1) GET /    (listar)
-#      - Query params:
-#         * machine_id: int | None (filtrar por máquina)
-#         * date_from: str | None ('YYYY-MM-DD' o 'YYYY-MM-DD HH:MM:SS')
-#         * date_to:   str | None (mismo formato)
-#         * limit: int (tope recomendado <= 100), offset: int (>= 0)
-#         * sort_by (opcional): 'at' o 'id' (default 'at'), ascending: bool (default True)
-#      - Validaciones:
-#         * limit/offset >= 0, formatear y validar fechas si vienen.
-#      - Flujo:
-#         * Llamar domain.listar_counters(...) con repos.
-#      - Respuesta:
-#         * 200 OK → list[CounterOut] con los campos del CSV (sin auditoría por defecto)
-#
-#   2) GET /{counter_id}    (detalle)
-#      - Path param: counter_id: int
-#      - Flujo:
-#         * Llamar domain.obtener_counter(repo, counter_id).
-#      - Respuestas:
-#         * 200 OK → CounterOut
-#         * 404 Not Found si no existe
-#
-#   3) POST /    (crear registro de contador)
-#      - Body: CounterIn
-#      - Validaciones principales (delegar a dominio):
-#         * machine_id existente y máquina is_active == True
-#         * Montos ≥ 0 (in/out/jackpot/billetero)
-#         * 'at' correcto; si no viene, usar clock() en dominio
-#      - Flujo:
-#         * domain.create_counter(data, clock, counters_repo, machines_repo, actor='system' o user)
-#      - Respuestas:
-#         * 201 Created → CounterOut con id asignado
-#         * 404 Not Found si machine_id no existe o está inactiva
-#         * 400 Bad Request si montos/fechas inválidas
-#
-#   4) PUT /{counter_id}    (opcional: corrección de registro)
-#      - Body: CounterUpdate
-#      - Política:
-#         * En el curso, el historial idealmente es inmutable. Si se habilita corrección,
-#           registrar log del cambio (logs_repo) con quién/cuándo/qué se cambió.
-#      - Validaciones:
-#         * counter_id existente
-#         * Si cambia machine_id: validar que exista y esté activa
-#         * Montos ≥ 0; 'at' válido
-#      - Respuestas:
-#         * 200 OK → registro corregido
-#         * 404 si no existe
-#         * 400 por datos inválidos
-#
-# Códigos de estado recomendados:
-#   - GET lista/detalle: 200
-#   - POST crear: 201
-#   - PUT update: 200
-#   - Errores: 400 (validación), 404 (no encontrado)
-#
-# Notas:
-#   - Las conversiones/lecturas de CSV se hacen en repos (storage/*_repo.py).
-#   - Fecha/hora en formato local 'YYYY-MM-DD HH:MM:SS' (consistencia con el proyecto).
-# -------------------------------------------
+from datetime import datetime
+
+from fastapi import APIRouter, HTTPException, Query, Path, status
+
+from back.models.counters import CounterIn, CounterOut, CounterOutWithMachine, MachineSimple
+from back.domain.counters.create import create_counter, NotFoundError
+
+from back.storage import counters_repo as repo_counters
+from back.storage.machines_repo import MachinesRepo
+
+# Instancia de repo para máquinas (coherente con otros routers)
+repo_machines = MachinesRepo()
+
+
+router = APIRouter()
+
+
+def _clock_local() -> str:
+	"""Reloj local simple: devuelve 'YYYY-MM-DD HH:MM:SS'."""
+	return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+@router.get("", response_model=list[CounterOut], status_code=status.HTTP_200_OK)
+def list_counters(
+	machine_id: int | None = Query(None, ge=1),
+	date_from: str | None = Query(None),
+	date_to: str | None = Query(None),
+	limit: int = Query(100, ge=1, le=1000),
+	offset: int = Query(0, ge=0),
+	sort_by: str = Query("at"),
+	ascending: bool = Query(True),
+):
+	"""
+	Endpoint para listar contadores. Los filtros son simples y pensados
+	para uso académico (CSV como almacenamiento).
+	"""
+	results = repo_counters.list_counters(
+		machine_id=machine_id,
+		date_from=date_from,
+		date_to=date_to,
+		limit=limit,
+		offset=offset,
+		sort_by=sort_by,
+		ascending=ascending,
+	)
+	# mapear a CounterOut (FastAPI/Pydantic hará validación ligera)
+	return [CounterOut(**r) for r in results]
+
+
+@router.get("/{counter_id}", response_model=CounterOut, status_code=status.HTTP_200_OK)
+def get_counter(counter_id: int = Path(..., ge=1)):
+	"""Obtener un contador por su id."""
+	row = repo_counters.get_by_id(counter_id)
+	if row is None:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registro no encontrado")
+	return CounterOut(**row)
+
+
+@router.post("", response_model=CounterOut, status_code=status.HTTP_201_CREATED)
+def post_counter(body: CounterIn):
+	"""
+	Crear un nuevo contador. Delegamos reglas de negocio a `create_counter`.
+	Se usa `repo_counters` y `repo_machines` directamente (patrón simple del proyecto).
+	"""
+	# Validación explícita en la capa de API: existe la máquina y está activa?
+	m_check = repo_machines.get_by_id(int(body.machine_id)) if body.machine_id is not None else None
+	if m_check is None:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Máquina con id {body.machine_id} no encontrada")
+	# También validar estado activo (coincide con la validación en domain pero repetimos
+	# aquí para dar feedback inmediato desde la API)
+	is_active_val = m_check.get("is_active")
+	is_active = False
+	if isinstance(is_active_val, bool):
+		is_active = is_active_val
+	elif is_active_val is None:
+		is_active = False
+	else:
+		is_active = str(is_active_val).lower() == "true"
+
+	if not is_active:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Máquina {body.machine_id} no está activa")
+
+	try:
+		created = create_counter(
+			data=body.model_dump(),
+			clock=_clock_local,
+			counters_repo=repo_counters,
+			machines_repo=repo_machines,
+			actor="api",
+		)
+		# Recuperar información básica de la máquina para devolverla junto al contador
+		m = repo_machines.get_by_id(created.get("machine_id"))
+		machine_simple = None
+		if m:
+			try:
+				machine_simple = MachineSimple(
+					id=int(m.get("id")),
+					marca=m.get("marca"),
+					modelo=m.get("modelo"),
+					serial=m.get("serial"),
+					asset=m.get("asset"),
+				)
+			except Exception:
+				machine_simple = None
+		return CounterOutWithMachine(**{**created, "machine": machine_simple})
+	except NotFoundError as e:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+	except ValueError as e:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+

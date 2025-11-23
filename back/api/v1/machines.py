@@ -124,7 +124,7 @@ def listar_maquinas(only_active: Optional[bool] = Query(None)):
     data = repo.list_all()
 
     if only_active is not None:
-        data = [m for m in data if str(m["estado"]).lower() == str(only_active).lower()]
+        data = [m for m in data if str(m.get("is_active", "True")).lower() == str(only_active).lower()]
 
     return [
         MachineOut(
@@ -134,7 +134,7 @@ def listar_maquinas(only_active: Optional[bool] = Query(None)):
             serial=m["serial"],
             asset=m["asset"],
             denominacion=m["denominacion"],
-            estado=str(m["estado"]).lower() == "true",
+            estado=str(m.get("estado", "True")).lower() == "true",
             casino_id=int(m["casino_id"])
         )
         for m in data
