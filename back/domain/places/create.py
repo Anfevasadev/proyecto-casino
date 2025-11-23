@@ -23,40 +23,44 @@
 #   - Duplicado de name -> ValueError/DomainError.
 # -------------------------------------------
 
-from back.storage.place_storage import PlaceStorage
-from back.models.place_models import PlaceIn, PlaceOut
+from back.storage.place_storage import CasinoStorage
+from back.models.place_models import CasinoIn, CasinoOut
 
 
-class PlaceDomain:
-    """Lógica de negocio para casinos"""
+class Casino:
+    """
+    Clase Casino según UML
+    Métodos: crearCasino(), modificarCasino(), inactivarCasino(), listarMaquina()
+    """
 
     @staticmethod
-    def create_place(place_data: PlaceIn, created_by: str = "system") -> PlaceOut:
+    def crearCasino(casino_data: CasinoIn, created_by: str = "system") -> CasinoOut:
         """
+        Método crearCasino() según UML
         Crea un nuevo casino validando las reglas de negocio
         
         Args:
-            place_data: Datos del casino a crear
+            casino_data: Datos del casino a crear (CasinoIn)
             created_by: Usuario que crea
             
         Returns:
-            PlaceOut: Casino creado
+            CasinoOut: Casino creado
             
         Raises:
             ValueError: Si el código ya existe o hay errores
         """
         
-        # Crear el casino en el storage
+        # Crear el casino usando el storage
         try:
-            created_place_dict = PlaceStorage.create_place(
-                nombre=place_data.nombre,
-                direccion=place_data.direccion,
-                codigo_casino=place_data.codigo_casino,
+            created_casino_dict = CasinoStorage.crearCasino(
+                nombre=casino_data.nombre,
+                direccion=casino_data.direccion,
+                codigoCasino=casino_data.codigoCasino,
                 created_by=created_by
             )
             
             # Convertir a modelo de salida
-            return PlaceOut(**created_place_dict)
+            return CasinoOut(**created_casino_dict)
             
         except Exception as e:
             raise ValueError(f"Error al crear el casino: {str(e)}")
