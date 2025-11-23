@@ -72,14 +72,24 @@
 # -------------------------------------------
 # back/api/v1/machines.py
 # back/api/v1/machines.py
-from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException, Query, status
+from typing import List, Optional, Union, Dict, Any, Callable
+from datetime import datetime
 from pydantic import BaseModel
 
-from back.models.machines import MachineIn, MachineOut
+from back.storage.place_repo import PlaceStorage
+from back.domain.machines.create import registrarMaquina
+from back.models.machines import MachineIn, MachineOut, MachineUpdate
 from back.storage.machines_repo import MachinesRepo
 from back.domain.machines.inativation import inactivar_maquina_por_serial
 from back.domain.machines.activation import activar_maquina_por_serial
+from back.domain.machines.update import actualizar_machine
+
+def local_clock() -> datetime:
+    return datetime.now()
+
+places_repo_instance = PlaceStorage()
 
 repo = MachinesRepo()
 router = APIRouter()
@@ -92,30 +102,13 @@ class SerialAction(BaseModel):
 
 @router.post("/", response_model=MachineOut, status_code=201)
 def registrar_maquina(machine: MachineIn, actor: str = "system"):
-    new_id = repo.next_id()
-
-    row = {
-        "id": new_id,
-        "marca": machine.marca,
-        "modelo": machine.modelo,
-        "serial": machine.serial,
-        "asset": machine.asset,
-        "denominacion": machine.denominacion,
-        "estado": str(machine.is_active),
-        "casino_id": machine.place_id
-    }
-
-    repo.add(row, actor)
-
-    return MachineOut(
-        id=new_id,
-        marca=machine.marca,
-        modelo=machine.modelo,
-        serial=machine.serial,
-        asset=machine.asset,
-        denominacion=machine.denominacion,
-        estado=machine.is_active,
-        casino_id=machine.place_id
+    
+    return registrarMaquina(
+        data=machine, 
+        clock=local_clock,
+        machines_repo=repo,
+        places_repo=places_repo_instance,
+        actor=actor
     )
 
 
@@ -177,3 +170,26 @@ def activate_machine(payload: SerialAction):
         return result
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.put("/{machine_id}", response_model=MachineOut, status_code=status.HTTP_200_OK)
+def actualizar_maquina(machine_id: int, cambios: MachineUpdate, actor: str = "system"):
+    try:
+        updated_row = actualizar_machine(
+            machine_id=machine_id,
+            cambios=cambios,
+            clock=local_clock,            
+            machines_repo=repo,            
+            places_repo=places_repo_instance, 
+            actor=actor                    
+        )
+        
+        return updated_row
+        
+    except HTTPException:
+        raise 
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Error interno al procesar la actualización: {str(exc)}"
+        )
