@@ -23,7 +23,7 @@
 #   - Duplicado de name -> ValueError/DomainError.
 # -------------------------------------------
 
-from back.storage.place_storage import PlaceStorage
+from back.storage.places_repo import PlaceStorage
 from back.models.place_models import PlaceIn, PlaceOut
 
 
