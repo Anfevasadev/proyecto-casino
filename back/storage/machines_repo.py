@@ -35,7 +35,7 @@
 # -------------------------------------------
 import csv
 import os
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import datetime
 
 class MachinesRepo:
@@ -137,4 +137,22 @@ class MachinesRepo:
                 return True # Conflicto encontrado
                 
         return False # No hay conflictos
+    
+
+     # Obtener máquinas por casino para el cuadre
+    # ---------------------------------------------------------
+    def get_machines_by_casino(self, casino_id: int) -> List[Dict]:
+        """
+        Devuelve todas las máquinas cuyo place_id coincide con el casino indicado.
+        El módulo de balances necesita esto para generar el cuadre.
+        """
+        resultado = [
+            m for m in self.data
+            if m.get("place_id") and int(m["place_id"]) == casino_id
+        ]
+        return resultado
+    
+    
+   
+    
 

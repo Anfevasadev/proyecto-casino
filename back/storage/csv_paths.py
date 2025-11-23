@@ -18,3 +18,17 @@
 #   - No crear archivos aquí; solo definir rutas.
 #   - Mantener nombres de constantes en MAYÚSCULAS para claridad.
 # -------------------------------------------
+# back/storage/csv_paths.py
+# Rutas a los CSV que usa el sistema
+
+import os
+
+BASE_PATH = os.path.join(os.getcwd(), "data")
+
+PLACES_CSV_PATH = os.path.join(BASE_PATH, "places.csv")
+MACHINES_CSV_PATH = os.path.join(BASE_PATH, "machines.csv")
+COUNTERS_CSV_PATH = os.path.join(BASE_PATH, "counters.csv")
+USERS_CSV_PATH = os.path.join(BASE_PATH, "users.csv")
+LOGS_CSV_PATH = os.path.join(BASE_PATH, "logs.csv")
+MACHINE_BALANCES_CSV_PATH = os.path.join(BASE_PATH, "machine_balances.csv")
+CASINO_BALANCES_CSV_PATH = os.path.join(BASE_PATH, "casino_balances.csv")

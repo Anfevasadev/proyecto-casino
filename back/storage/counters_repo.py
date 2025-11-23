@@ -30,3 +30,76 @@
 #   - Manejar coerción de tipos (floats para montos, int para ids) antes de guardar.
 #   - Las fechas 'at' son strings formateadas; aquí NO se transforman a datetime nativo.
 # -------------------------------------------
+# back/storage/counters_repo.py
+# Repositorio encargado de leer los contadores desde counters.csv
+
+import csv
+from datetime import datetime
+from decimal import Decimal
+from .csv_paths import COUNTERS_CSV_PATH
+
+
+class CounterRecord:
+    """
+    Modelo simple que representa un registro de contador.
+    Este modelo es usado por los servicios que requieren acceder
+    a los contadores de una máquina en una fecha específica.
+    """
+    def __init__(self, machine_id, date, in_value, out_value, jackpot, bill):
+        self.machine_id = int(machine_id)
+        self.date = date
+        self.in_value = Decimal(in_value)
+        self.out_value = Decimal(out_value)
+        self.jackpot = Decimal(jackpot)
+        self.bill = Decimal(bill)
+
+
+class CountersRepo:
+    """
+    Repositorio encargado de leer el archivo counters.csv
+    y devolver contadores filtrados por máquina y fecha.
+    """
+
+    def __init__(self):
+        self.path = COUNTERS_CSV_PATH
+
+    def read_all(self):
+        """
+        Lee todo el archivo counters.csv y devuelve objetos CounterRecord.
+        """
+        records = []
+        with open(self.path, "r", newline="", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+
+                # Convertir fecha
+                date_obj = datetime.strptime(row["date"], "%Y-%m-%d").date()
+
+                record = CounterRecord(
+                    machine_id=row["machine_id"],
+                    date=date_obj,
+                    in_value=row["in"],
+                    out_value=row["out"],
+                    jackpot=row["jackpot"],
+                    bill=row["bill"]
+                )
+                records.append(record)
+
+        return records
+
+    def get_counters_by_date(self, machine_id, date):
+        """
+        Devuelve el registro de contadores de una máquina en una fecha exacta.
+        Si no hay coincidencia exacta, lanza ValueError, porque así lo requiere
+        el módulo de balances.
+        """
+
+        records = self.read_all()
+
+        for record in records:
+            if record.machine_id == machine_id and record.date == date:
+                return record
+
+        raise ValueError(
+            f"No hay contadores para la máquina {machine_id} en la fecha {date}"
+        )

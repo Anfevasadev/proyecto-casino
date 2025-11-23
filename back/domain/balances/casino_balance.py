@@ -58,3 +58,87 @@
 #     usando participation_rate de machines (p. ej., distribuir utilidad por proporción),
 #     o en la capa de reportes; no mezclar aquí para mantener responsabilidad única.
 # -------------------------------------------
+# back/domain/balances/casino_balance.py
+# Lógica del negocio para el cuadre global de casino.
+
+from decimal import Decimal
+from ...models.casino_balance import CasinoCuadre
+from ...storage.casino_balance_repo import CasinoBalanceRepo
+
+class CasinoBalanceService:
+    """
+    Servicio que calcula el cuadre general del casino.
+    """
+
+    def __init__(self):
+        self.repo = CasinoBalanceRepo()
+
+    def calcular_totales(self, maquina_id, fecha_inicio, fecha_fin):
+        """
+        Obtiene los contadores iniciales y finales de una máquina y
+        calcula los totales por diferencia.
+        """
+
+        cont_ini = self.repo.obtener_contadores(maquina_id, fecha_inicio)
+        cont_fin = self.repo.obtener_contadores(maquina_id, fecha_fin)
+
+        total_in = Decimal(cont_fin.in_value) - Decimal(cont_ini.in_value)
+        total_out = Decimal(cont_fin.out_value) - Decimal(cont_ini.out_value)
+        total_jackpot = Decimal(cont_fin.jackpot) - Decimal(cont_ini.jackpot)
+        total_billetero = Decimal(cont_fin.bill) - Decimal(cont_ini.bill)
+
+        return {
+            "total_in": total_in,
+            "total_out": total_out,
+            "total_jackpot": total_jackpot,
+            "total_billetero": total_billetero
+        }
+
+    def calcular_utilidad(self, total_in, total_out, total_jackpot, total_billetero):
+        """
+        Fórmula estándar para la utilidad.
+        """
+        return total_in - total_out - total_jackpot - total_billetero
+
+    def generar_cuadre(self, casino_id, fecha_inicio, fecha_fin):
+        """
+        Genera el cuadre total del casino:
+        1. obtiene máquinas
+        2. acumula totales
+        3. calcula utilidad
+        4. crea el modelo final
+        5. guarda el cuadre
+        """
+
+        maquinas = self.repo.obtener_maquinas_por_casino(casino_id)
+
+        total_in = Decimal(0)
+        total_out = Decimal(0)
+        total_jackpot = Decimal(0)
+        total_billetero = Decimal(0)
+
+        for maquina in maquinas:
+            totales = self.calcular_totales(maquina.id, fecha_inicio, fecha_fin)
+
+            total_in += totales["total_in"]
+            total_out += totales["total_out"]
+            total_jackpot += totales["total_jackpot"]
+            total_billetero += totales["total_billetero"]
+
+        utilidad = self.calcular_utilidad(total_in, total_out, total_jackpot, total_billetero)
+
+        cuadre = CasinoCuadre(
+            id=None,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            total_in=total_in,
+            total_out=total_out,
+            total_jackpot=total_jackpot,
+            total_billetero=total_billetero,
+            utilidad=utilidad,
+            casino_id=casino_id
+        )
+
+        self.repo.guardar_cuadre(cuadre)
+
+        return cuadre

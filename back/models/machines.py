@@ -60,3 +60,14 @@ class MachineOut(BaseModel):
     estado: bool
     casino_id: int
 
+class MachineUpdate(BaseModel):
+    id: int
+    marca: str
+    modelo: str
+    serial: str
+    asset: str
+    denominacion: str
+    estado: bool
+    casino_id: int
+    
+

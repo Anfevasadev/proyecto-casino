@@ -78,7 +78,7 @@ from typing import List, Optional, Union, Dict, Any, Callable
 from datetime import datetime
 from pydantic import BaseModel
 
-from back.storage.place_repo import PlaceStorage
+from back.storage.places_repo import PlaceStorage
 from back.domain.machines.create import registrarMaquina
 from back.models.machines import MachineIn, MachineOut, MachineUpdate
 from back.storage.machines_repo import MachinesRepo
