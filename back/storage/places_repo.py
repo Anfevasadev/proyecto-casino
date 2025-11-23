@@ -222,3 +222,25 @@ class PlaceStorage:
 
         return target in comp.values
 
+    @staticmethod
+    def get_place_by_code(codigo_casino: str) -> dict | None:
+        """
+        Obtiene un casino por su código (case-insensitive).
+        Retorna dict si existe, None si no.
+        """
+        PlaceStorage._ensure_csv_exists()
+        df = pd.read_csv(PLACES_CSV)
+
+        if df.empty:
+            return None
+
+        # Normalización para comparación
+        comp = df['codigo_casino'].astype(str).str.strip().str.upper()
+        target = codigo_casino.strip().upper()
+
+        row = df.loc[comp == target]
+
+        if row.empty:
+            return None
+
+        return row.iloc[0].to_dict()
