@@ -24,7 +24,7 @@
 # -------------------------------------------
 
 from back.storage.places_repo import PlaceStorage
-from back.models.place_models import PlaceIn, PlaceOut
+from back.models.places import PlaceIn, PlaceOut
 
 
 class PlaceDomain:
