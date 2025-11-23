@@ -45,7 +45,14 @@ class PlaceDomain:
         Raises:
             ValueError: Si el código ya existe o hay errores
         """
-        
+
+        # Validar código único antes de crear
+        existing = PlaceStorage.get_place_by_code(place_data.codigo_casino)
+        if existing:
+            raise ValueError(
+                f"Ya existe un casino registrado con el código: {place_data.codigo_casino}"
+            )
+
         # Crear el casino en el storage
         try:
             created_place_dict = PlaceStorage.create_place(
