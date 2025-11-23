@@ -31,10 +31,10 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 
-class CasinoIn(BaseModel):
+class PlaceIn(BaseModel):
     """
     Modelo de entrada para la creación de un casino.
-    Todos los campos son obligatorios según UML.
+    Todos los campos son obligatorios.
     """
     nombre: str = Field(
         ...,
@@ -48,12 +48,11 @@ class CasinoIn(BaseModel):
         max_length=200,
         description="Ubicación física completa del establecimiento"
     )
-    codigoCasino: str = Field(
+    codigo_casino: str = Field(
         ...,
         min_length=3,
         max_length=20,
-        description="Identificador único del casino",
-        alias="codigoCasino"
+        description="Identificador único del casino"
     )
 
     @field_validator('nombre')
@@ -74,9 +73,9 @@ class CasinoIn(BaseModel):
             raise ValueError("La dirección del casino no puede estar vacía")
         return v
 
-    @field_validator('codigoCasino')
+    @field_validator('codigo_casino')
     @classmethod
-    def validate_codigoCasino(cls, v: str) -> str:
+    def validate_codigo_casino(cls, v: str) -> str:
         """
         Valida el código del casino:
         - No vacío
@@ -94,22 +93,15 @@ class CasinoIn(BaseModel):
         
         return v
 
-    class Config:
-        populate_by_name = True
 
-
-class CasinoOut(BaseModel):
+class PlaceOut(BaseModel):
     """
     Modelo de salida - lo que se retorna al crear un casino
-    Según UML: id, nombre, direccion, codigoCasino, estado
     """
     id: int
     nombre: str
     direccion: str
-    codigoCasino: str
+    codigo_casino: str
     estado: bool = True
     created_at: Optional[str] = None
     created_by: Optional[str] = None
-
-    class Config:
-        populate_by_name = True
