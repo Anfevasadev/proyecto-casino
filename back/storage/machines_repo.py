@@ -34,45 +34,58 @@
 #     existencia de place si se le inyecta places_repo (pero mantener simple).
 # -------------------------------------------
 import csv
-from typing import List
+import os
+from typing import List, Dict
+from datetime import datetime
 
 class MachinesRepo:
+
     def __init__(self, filepath="data/machines.csv"):
         self.filepath = filepath
+        self._ensure_file()
         self.data = self._load()
 
-    def _load(self):
-        try:
-            with open(self.filepath, newline="") as f:
-                return list(csv.DictReader(f))
-        except FileNotFoundError:
-            return []
+    def _ensure_file(self):
+        if not os.path.exists(self.filepath):
+            with open(self.filepath, "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    "id","marca","modelo","serial","asset",
+                    "denominacion","estado","casino_id",
+                    "created_at","created_by","updated_at","updated_by"
+                ])
 
-    def next_id(self):
+    def _load(self) -> List[Dict]:
+        with open(self.filepath, newline="") as f:
+            return list(csv.DictReader(f))
+
+    def _save(self):
+        with open(self.filepath, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=self.data[0].keys())
+            writer.writeheader()
+            writer.writerows(self.data)
+
+    def next_id(self) -> int:
         if not self.data:
             return 1
         return max(int(row["id"]) for row in self.data) + 1
 
-    def existe_code(self, serial: str):
-        return any(row["serial"] == serial for row in self.data)
+    def add(self, machine: dict, actor: str):
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        machine["created_at"] = now
+        machine["created_by"] = actor
+        machine["updated_at"] = now
+        machine["updated_by"] = actor
 
-    def insertar_fila(self, row: dict):
-        self.data.append(row)
-        with open(self.filepath, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=row.keys())
-            writer.writeheader()
-            writer.writerows(self.data)
+        self.data.append(machine)
+        self._save()
 
-    def obtener_por_id(self, machine_id: int):
-        for row in self.data:
-            if int(row["id"]) == machine_id:
-                return row
+    def list_all(self):
+        return self.data
+
+    def get_by_id(self, machine_id: int):
+        for m in self.data:
+            if int(m["id"]) == machine_id:
+                return m
         return None
 
-    def listar_filtrado(self, casino_id=None, only_active=True):
-        result = self.data
-        if casino_id is not None:
-            result = [m for m in result if int(m["casino_id"]) == casino_id]
-        if only_active:
-            result = [m for m in result if m["estado"] in [True, "True", 1, "1"]]
-        return result

@@ -39,41 +39,18 @@ from back.storage.machines_repo import MachinesRepo
 from datetime import datetime
 
 def registrarMaquina(data: MachineIn, clock, machines_repo: MachinesRepo, actor: str):
-    """
-    Registra una nueva máquina en el repositorio.
-    
-    Parámetros
-    ----------
-    data : MachineIn
-        Datos de la máquina que se va a crear.
-    clock : objeto
-        Utilizado para obtener la fecha/hora actual.
-    machines_repo : MachinesRepo
-        Repositorio para guardar y consultar máquinas.
-    actor : str
-        Usuario o sistema que realiza la creación.
-
-    Retorna
-    -------
-    MachineOut
-        Objeto con los datos de la máquina registrada.
-    """
     # Validaciones básicas
-    if not data.marca or not data.modelo or not data.serial or not data.asset:
+    if not data.marca or not data.modelo or not data.serial or not data.asset or not data.denominacion:
         raise ValueError("Todos los campos obligatorios deben ser completados")
 
-    # Verificar que no exista una máquina con el mismo serial o asset
-    maquinas_existentes = machines_repo.listar_filtrado()
-    for m in maquinas_existentes:
-        if m["serial"] == data.serial:
-            raise ValueError(f"Serial {data.serial} ya registrado")
-        if m["asset"] == data.asset:
-            raise ValueError(f"Asset {data.asset} ya registrado")
+    # Validar unicidad serial/asset
+    if machines_repo.existe_serial_o_asset(data.serial, data.asset):
+        raise ValueError("Serial o Asset ya registrado")
 
-    # Crear ID incremental
-    nuevo_id = max([m["id"] for m in maquinas_existentes], default=0) + 1
+    # Crear ID
+    nuevo_id = machines_repo.next_id()
 
-    # Construir objeto MachineOut
+    # Construir MachineOut
     nueva_maquina = MachineOut(
         id=nuevo_id,
         marca=data.marca,
@@ -82,10 +59,9 @@ def registrarMaquina(data: MachineIn, clock, machines_repo: MachinesRepo, actor:
         asset=data.asset,
         denominacion=data.denominacion,
         estado=data.is_active,
-        casino_id=data.place_id  # Mantener place_id aunque no se valide aún
+        casino_id=data.place_id  # temporal, mientras no se valida casino
     )
 
-    # Guardar en repositorio
+    # Guardar en CSV
     machines_repo.agregar(nueva_maquina, actor, clock.now())
-
     return nueva_maquina

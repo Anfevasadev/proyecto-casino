@@ -38,7 +38,7 @@
 #   - denomination_value >= 0.
 #   - participation_rate en el rango [0,1].
 # -------------------------------------------
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 class MachineIn(BaseModel):
     marca: str
@@ -46,8 +46,9 @@ class MachineIn(BaseModel):
     serial: str
     asset: str
     place_id: int
-    denominacion: float = Field(..., ge=0)
+    denominacion: str
     is_active: bool = True
+
 
 class MachineOut(BaseModel):
     id: int
@@ -55,6 +56,7 @@ class MachineOut(BaseModel):
     modelo: str
     serial: str
     asset: str
-    denominacion: float
+    denominacion: str
     estado: bool
     casino_id: int
+
