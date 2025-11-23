@@ -27,8 +27,10 @@ from fastapi import APIRouter
 
 from back.api.v1.auth import router as auth_router 
 from back.api.v1.users import router as users_router
+from back.api.v1.places import router as places_router
 
 
 api_router = APIRouter(prefix="/v1")
 api_router.include_router(auth_router, tags=["auth"]) 
 api_router.include_router(users_router, prefix="/users", tags=["users"])
+api_router.include_router(places_router, prefix="/places", tags=["places"])
