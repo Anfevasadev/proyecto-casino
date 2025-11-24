@@ -22,3 +22,62 @@
 # Errores:
 #   - Duplicado de name -> ValueError/DomainError.
 # -------------------------------------------
+
+from back.storage.places_repo import PlaceStorage
+from back.models.places import PlaceIn, PlaceOut
+
+
+class PlaceDomain:
+    """Lógica de negocio para casinos"""
+
+    @staticmethod
+    def create_place(place_data: PlaceIn, created_by: str = "system") -> PlaceOut:
+        """
+        Crea un nuevo casino validando las reglas de negocio
+        
+        Args:
+            place_data: Datos del casino a crear
+            created_by: Usuario que crea
+            
+        Returns:
+            PlaceOut: Casino creado
+            
+        Raises:
+            ValueError: Si el código ya existe o hay errores
+        """
+
+        # Validar código único antes de crear
+        existing = PlaceStorage.get_place_by_code(place_data.codigo_casino)
+        if existing:
+            raise ValueError(
+                f"Ya existe un casino registrado con el código: {place_data.codigo_casino}"
+            )
+
+        # Crear el casino en el storage
+        try:
+            created_place_dict = PlaceStorage.create_place(
+                nombre=place_data.nombre,
+                direccion=place_data.direccion,
+                codigo_casino=place_data.codigo_casino,
+                created_by=created_by
+            )
+            
+            # Convertir a modelo de salida
+            return PlaceOut(**created_place_dict)
+            
+        except Exception as e:
+            raise ValueError(f"Error al crear el casino: {str(e)}")
+
+    @staticmethod
+    def inactivar_casino(casino_id: int, actor: str = "system") -> bool:
+        """
+        Desactiva un casino usando la capa de almacenamiento.
+        """
+        from back.storage.places_repo import PlaceStorage
+
+        try:
+            return PlaceStorage.inactivar(casino_id, actor=actor)
+        except KeyError as e:
+            raise KeyError(str(e))
+        except Exception as e:
+            raise Exception(f"Error al inactivar casino: {str(e)}")
