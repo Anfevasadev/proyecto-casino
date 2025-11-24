@@ -1,35 +1,65 @@
-# -------------------------------------------
 # back/domain/counters/update.py
-# Función: actualizar_counter(counter_id, cambios, clock, repo, machines_repo, actor, logs_repo=None)
-#
-# Contexto:
-#   - Se permite para CORRECCIONES. Idealmente el historial es inmutable; si se prefiere,
-#     implementar como "nueva fila corrección" y dejar la previa intacta. Aquí se documenta
-#     la opción de actualización directa si el equipo decide permitirla.
-#
-# Entradas:
-#   - counter_id: int
-#   - cambios: dict con campos editables (at, in_amount, out_amount, jackpot_amount, billetero_amount)
-#   - clock, repo (counters), machines_repo (si cambia machine_id), actor, logs_repo opcional
-#
-# Validaciones:
-#   - counter_id existente.
-#   - Si cambia machine_id: debe existir y estar activa.
-#   - amounts >= 0; 'at' válido.
-#
-# Procesamiento (si se actualiza en sitio):
-#   1) Cargar registro.
-#   2) Aplicar cambios válidos.
-#   3) updated_at/by = clock()/actor.
-#   4) Guardar.
-#   5) logs_repo.insert(event_type='update', entity_type='counter', entity_id=counter_id, description='corrección ...')
-#
-# Alternativa (si se hace corrección por nueva fila):
-#   - Crear nuevo registro con valores corregidos, referenciando el original en logs/description.
-#
-# Salida:
-#   - Dict con registro actualizado (o el nuevo, si se hizo corrección por nueva fila).
-#
-# Errores:
-#   - NotFoundError, ValueError (validaciones).
-# -------------------------------------------
+
+from typing import Callable, List, Any
+from datetime import date, datetime
+from fastapi import HTTPException, status
+
+from back.models.counters import CounterUpdateBatch, CounterOut
+
+def modificar_contadores_batch(
+    casino_id: int,
+    fecha: date,
+    batch_data: CounterUpdateBatch,
+    counters_repo: Any,
+    places_repo: Any,
+    clock: Callable[[], datetime],
+    actor: str
+) -> List[CounterOut]:
+    """
+    Validaciones:
+    - El Casino debe existir y estar activo.
+    - Deben existir registros para actualizar en esa fecha.
+    """
+
+    # 1. Validar Casino (Existencia y Estado)
+    casino = places_repo.obtener_por_id(casino_id)
+    
+    if not casino:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=f"Casino con ID {casino_id} no encontrado."
+        )
+
+    # Validamos si está activo (el repo devuelve True/False en 'estado')
+    if casino.get('estado', False) is False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail=f"El Casino {casino.get('nombre')} está inactivo. No se pueden modificar registros."
+        )
+
+    # 2. Preparar datos para el Repositorio
+    # Convertimos la fecha date a string 'YYYY-MM-DD'
+    fecha_str = fecha.strftime("%Y-%m-%d")
+    
+    # exclude_none=True solo envia al repo los campos que SÍ cambiaron.
+    updates_list = [u.dict(exclude_none=True) for u in batch_data.updates]
+
+    # 3. Ejecutar Actualización
+    updated_rows = counters_repo.update_batch(
+        casino_id=casino_id,
+        fecha_filtro=fecha_str,
+        updates=updates_list,
+        actor=actor,
+        timestamp=clock()
+    )
+
+    # 4. Validar Resultado
+    if not updated_rows:
+        # Si la lista está vacía, significa que no hubo coincidencias de fecha/casino/máquina
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No se encontraron registros coincidentes para actualizar en el Casino {casino_id} el día {fecha_str}."
+        )
+
+    # 5. Convertir diccionarios a Modelos de Salida (CounterOut)
+    return [CounterOut(**row) for row in updated_rows]
