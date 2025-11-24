@@ -7,9 +7,11 @@
 #
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field, validator
 import re
+from datetime import date
+from decimal import Decimal
 
 
 # Explicación breve (nivel estudiante):
@@ -65,7 +67,7 @@ class CounterUpdate(BaseModel):
 	Todos los campos son opcionales; si vienen, se validan.
 	"""
 
-	machine_id: Optional[int] = Field(None, ge=1)
+	machine_id: int = Field(..., ge=1, description="ID de la máquina a modificar")
 	at: Optional[str] = Field(None)
 	in_amount: Optional[float] = Field(None, ge=0.0)
 	out_amount: Optional[float] = Field(None, ge=0.0)
@@ -80,6 +82,11 @@ class CounterUpdate(BaseModel):
 			raise ValueError("'at' debe tener formato 'YYYY-MM-DD HH:MM:SS'")
 		return v
 
+class CounterUpdateBatch(BaseModel):
+    """
+    Modelo contenedor para recibir múltiples actualizaciones en una sola petición.
+    """
+    updates: List[CounterUpdate]
 
 class CounterOut(BaseModel):
 	"""
@@ -91,6 +98,7 @@ class CounterOut(BaseModel):
 
 	id: int
 	machine_id: int
+	casino_id: int
 	at: str
 	in_amount: float
 	out_amount: float
@@ -109,7 +117,6 @@ class CounterOut(BaseModel):
 				"billetero_amount": 100.0,
 			}
 		}
-
 
 # Modelo enriquecido: incluye información mínima de la máquina vinculada.
 class MachineSimple(BaseModel):
