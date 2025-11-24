@@ -205,6 +205,44 @@ class PlaceStorage:
         return row.iloc[0].to_dict()
 
     @staticmethod
+    def actualizar_place(place_id: int, cambios: dict, actor: str = "system") -> dict:
+        """
+        Actualiza los campos proporcionados de un casino y devuelve la fila actualizada.
+
+        No valida reglas de negocio (por ejemplo, inmutabilidad de `codigo_casino`);
+        esas validaciones deben hacerse en la capa de dominio.
+
+        Lanza KeyError si el `place_id` no existe.
+        """
+        PlaceStorage._ensure_csv_exists()
+        df = pd.read_csv(PLACES_CSV)
+
+        if df.empty or place_id not in df['id'].astype(int).values:
+            raise KeyError(f"No existe un casino con ID {place_id}")
+
+        row_idx = df.index[df['id'].astype(int) == int(place_id)][0]
+
+        # Aplicar sólo columnas conocidas para evitar escribir campos extraños
+        allowed = {'nombre', 'direccion', 'estado'}
+        for k, v in cambios.items():
+            if k in allowed:
+                df.at[row_idx, k] = v
+
+        # Auditoría
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if 'updated_at' not in df.columns:
+            df['updated_at'] = None
+        if 'updated_by' not in df.columns:
+            df['updated_by'] = None
+
+        df.at[row_idx, 'updated_at'] = timestamp
+        df.at[row_idx, 'updated_by'] = actor
+
+        df.to_csv(PLACES_CSV, index=False)
+
+        return df.loc[row_idx].fillna('').to_dict()
+
+    @staticmethod
     def existe_nombre(nombre: str, exclude_id: int | None = None) -> bool:
         """Verifica si ya existe un nombre (case-insensitive)."""
         PlaceStorage._ensure_csv_exists()
@@ -244,3 +282,41 @@ class PlaceStorage:
             return None
 
         return row.iloc[0].to_dict()
+
+    @staticmethod
+    def actualizar_place(place_id: int, cambios: dict, actor: str = "system") -> dict:
+        """Aplica cambios a un casino y los persiste en el CSV.
+
+        Este método NO aplica validaciones de negocio complejas (por ejemplo,
+        unicidad de nombre o inmutabilidad de codigo_casino). Es responsabilidad
+        de la capa de dominio validar reglas antes de llamar aquí.
+
+        Retorna la fila actualizada como dict. Lanza KeyError si no existe.
+        """
+        PlaceStorage._ensure_csv_exists()
+        df = pd.read_csv(PLACES_CSV)
+
+        if df.empty or int(place_id) not in df['id'].astype(int).values:
+            raise KeyError(f"No existe un casino con ID {place_id}")
+
+        row_idx = df.index[df['id'].astype(int) == int(place_id)][0]
+
+        # Aplicar cambios solo a columnas permitidas
+        allowed = {'nombre', 'direccion', 'estado'}
+        for k, v in cambios.items():
+            if k in allowed:
+                df.at[row_idx, k] = v
+
+        # Auditoría
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if 'updated_at' not in df.columns:
+            df['updated_at'] = None
+        if 'updated_by' not in df.columns:
+            df['updated_by'] = None
+
+        df.at[row_idx, 'updated_at'] = timestamp
+        df.at[row_idx, 'updated_by'] = actor
+
+        df.to_csv(PLACES_CSV, index=False)
+
+        return df.loc[row_idx].fillna('').to_dict()

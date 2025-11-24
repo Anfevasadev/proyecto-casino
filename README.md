@@ -33,6 +33,9 @@ source .venv/bin/activate     # Windows: .venv\Scripts\activate
 # instalar dependencias
 pip install -r requirements.txt
 
+# instalar upgrade del sistema
+pip install --upgrade pip
+
 # generar CSVs (si hace falta)
 python init_csvs.py
 ```

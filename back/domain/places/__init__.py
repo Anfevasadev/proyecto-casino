@@ -18,3 +18,6 @@
 #   - actualizar_place(id, cambios)
 #   - desactivar_place(id)
 # -------------------------------------------
+from .management import CasinoManagement
+
+__all__ = ["CasinoManagement"]

@@ -60,6 +60,8 @@
 
 from fastapi import APIRouter, HTTPException
 from back.domain.places.create import PlaceDomain
+from back.domain.places.management import CasinoManagement
+from back.storage.places_repo import PlaceStorage
 from back.models.places import PlaceIn, PlaceOut
 
 router = APIRouter()
@@ -98,5 +100,46 @@ def crear_casino(place: PlaceIn, actor: str = "system"):
         return created
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --------------------------------------
+# LISTAR CASINOS
+# --------------------------------------
+@router.get("/casino")
+def listar_casinos(only_active: bool = True, limit: int | None = None, offset: int = 0):
+    try:
+        places = PlaceStorage.listar(only_active=only_active, limit=limit, offset=offset)
+        return places
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --------------------------------------
+# MODIFICAR CASINO
+# --------------------------------------
+@router.put("/casino/{casino_id}")
+def modificar_casino(casino_id: int, cambios: dict, actor: str = "system"):
+    """Actualiza campos editables de un casino (no permite cambiar el código)."""
+    try:
+        updated = PlaceDomain.update_place(casino_id, cambios, actor=actor)
+        return updated
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Casino no encontrado")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --------------------------------------
+# LISTAR MÁQUINAS DE UN CASINO
+# --------------------------------------
+@router.get("/casino/{casino_id}/maquinas")
+def listar_maquinas_casino(casino_id: int, only_active: bool = True):
+    try:
+        machines = CasinoManagement.listar_maquinas(casino_id, only_active=only_active)
+        return machines
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

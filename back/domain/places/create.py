@@ -81,3 +81,41 @@ class PlaceDomain:
             raise KeyError(str(e))
         except Exception as e:
             raise Exception(f"Error al inactivar casino: {str(e)}")
+
+    @staticmethod
+    def update_place(place_id: int, cambios: dict, actor: str = "system") -> dict:
+        """
+        Actualiza un casino respetando reglas de negocio y delega la persistencia al repo.
+
+        Reglas importantes:
+        - `codigo_casino` no puede ser modificado (si viene en `cambios` y difiere, se lanza ValueError).
+        - Si se cambia `nombre`, debe ser único (case-insensitive) entre los demás casinos.
+
+        Retorna el dict actualizado.
+        """
+        # Obtener actual
+        existing = PlaceStorage.obtener_por_id(int(place_id))
+        if not existing:
+            raise KeyError(f"No existe un casino con ID {place_id}")
+
+        # Validar codigo_casino inmutable
+        if 'codigo_casino' in cambios:
+            nueva = str(cambios['codigo_casino']).strip().upper()
+            actual = str(existing.get('codigo_casino', '')).strip().upper()
+            if nueva != actual:
+                raise ValueError('El código del casino no puede ser modificado')
+
+        # Validar nombre único si se intenta cambiar
+        if 'nombre' in cambios:
+            nuevo_nombre = str(cambios['nombre']).strip()
+            if PlaceStorage.existe_nombre(nuevo_nombre, exclude_id=int(place_id)):
+                raise ValueError(f"Ya existe otro casino con el nombre '{nuevo_nombre}'")
+
+        # Delegar la actualización al repo
+        try:
+            updated = PlaceStorage.actualizar_place(int(place_id), cambios, actor=actor)
+            return updated
+        except KeyError:
+            raise
+        except Exception as e:
+            raise Exception(f"Error al actualizar casino: {str(e)}")
