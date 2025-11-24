@@ -23,3 +23,7 @@ timestamp,action,machine_id,serial,inactivation_token,motivo,actor,note
 2025-11-23 22:39:53,inactivation_attempt_on_already_inactive,1,SN2001,ed0548059dd54fc6a76fa334ac0f865e,h,system,machine_already_inactive
 2025-11-23 22:40:19,activate_machine,1,SN2001,,reactivacion_manual,system,string
 2025-11-23 22:41:24,inactivate_machine,2,SN2002,d5c67c15e8ed4f5d93ebd1647a6c3466,string,system,
+2025-11-24 03:32:46,inactivate_machine,1,CNB234,cbebeec55ae5453d96c8938414be5acb,string,X,
+2025-11-24 03:34:19,activate_machine,1,CNB234,,reactivacion_manual,Juan,string
+2025-11-24 03:53:42,inactivate_machine,1,SN4001,ec50015b76214b80a6135b0a2716da3a,Porque si,Juan,
+2025-11-24 03:54:38,activate_machine,1,SN4001,,reactivacion_manual,Juan,Just Because

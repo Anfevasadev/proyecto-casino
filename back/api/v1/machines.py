@@ -78,10 +78,12 @@ from pydantic import BaseModel
 
 from back.models.machines import MachineIn, MachineOut
 from back.storage.machines_repo import MachinesRepo
+from back.storage.places_repo import PlaceStorage
 from back.domain.machines.inativation import inactivar_maquina_por_serial
 from back.domain.machines.activation import activar_maquina_por_serial
 
 repo = MachinesRepo()
+repo_places = PlaceStorage()
 router = APIRouter()
 
 
@@ -92,6 +94,36 @@ class SerialAction(BaseModel):
 
 @router.post("/", response_model=MachineOut, status_code=201)
 def registrar_maquina(machine: MachineIn, actor: str = "system"):
+    # Validar unicidad de serial
+    if repo.existe_serial(machine.serial):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ya existe una máquina con el serial '{machine.serial}'"
+        )
+    
+    # Validar unicidad de asset
+    if repo.existe_asset(machine.asset):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ya existe una máquina con el asset '{machine.asset}'"
+        )
+    
+    # Validar que el casino (place_id) exista
+    if machine.place_id is not None:
+        casino = repo_places.obtener_por_id(machine.place_id)
+        if casino is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Casino con id {machine.place_id} no encontrado"
+            )
+        # Validar que el casino esté activo
+        estado = casino.get("estado")
+        if estado is not None and str(estado).lower() == "false":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Casino con id {machine.place_id} está inactivo"
+            )
+    
     new_id = repo.next_id()
 
     row = {

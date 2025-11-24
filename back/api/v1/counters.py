@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query, Path, status
+from fastapi import APIRouter, HTTPException, Query, Path, status, Body
 
 from back.models.counters import CounterIn, CounterOut, CounterOutWithMachine, MachineSimple, CounterUpdateBatch
 
@@ -10,7 +10,7 @@ from back.domain.counters.read import consultar_contadores_reporte
 
 from back.storage.counters_repo import CountersRepo
 from back.storage.machines_repo import MachinesRepo
-from back.storage.place_repo import PlaceStorage
+from back.storage.places_repo import PlaceStorage
 
 
 # Instancia de repo para máquinas (coherente con otros routers)
@@ -75,8 +75,8 @@ def post_counter(body: CounterIn):
 	if m_check is None:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Máquina con id {body.machine_id} no encontrada")
 	# También validar estado activo (coincide con la validación en domain pero repetimos
-	# aquí para dar feedback inmediato desde la API)
-	is_active_val = m_check.get("is_active")
+	# aquí para dar feedback inmediato desde la API). El CSV usa 'estado' o 'is_active'.
+	is_active_val = m_check.get("is_active") or m_check.get("estado")
 	is_active = False
 	if isinstance(is_active_val, bool):
 		is_active = is_active_val

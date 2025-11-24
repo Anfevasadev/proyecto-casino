@@ -90,8 +90,30 @@ class MachinesRepo:
         return self.data
 
     def get_by_id(self, machine_id: int):
+        # Recargar datos para asegurar que estén actualizados
+        self.data = self._load()
         for m in self.data:
             if int(m["id"]) == machine_id:
                 return m
         return None
+
+    def existe_serial(self, serial: str, exclude_id: int = None) -> bool:
+        """Verifica si existe una máquina con el serial dado."""
+        self.data = self._load()
+        for m in self.data:
+            if m.get("serial", "").strip().lower() == serial.strip().lower():
+                # Si se excluye un ID (para ediciones), no contar esa máquina
+                if exclude_id is None or int(m["id"]) != exclude_id:
+                    return True
+        return False
+
+    def existe_asset(self, asset: str, exclude_id: int = None) -> bool:
+        """Verifica si existe una máquina con el asset dado."""
+        self.data = self._load()
+        for m in self.data:
+            if m.get("asset", "").strip().lower() == asset.strip().lower():
+                # Si se excluye un ID (para ediciones), no contar esa máquina
+                if exclude_id is None or int(m["id"]) != exclude_id:
+                    return True
+        return False
 

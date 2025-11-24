@@ -56,8 +56,8 @@ def create_counter(
 	if machine is None:
 		raise NotFoundError(f"Máquina con id {machine_id} no encontrada")
 
-	# Validar que la máquina esté activa. Algunos CSV guardan 'is_active' como string.
-	is_active_val = machine.get("is_active")
+	# Validar que la máquina esté activa. El CSV usa 'estado' o 'is_active'.
+	is_active_val = machine.get("is_active") or machine.get("estado")
 	is_active = False
 	if isinstance(is_active_val, bool):
 		is_active = is_active_val
@@ -85,12 +85,21 @@ def create_counter(
 	if not at:
 		data["at"] = clock()
 
+	# Obtener casino_id de la máquina
+	casino_id = machine.get("casino_id")
+	if casino_id is not None:
+		try:
+			casino_id = int(float(casino_id))
+		except:
+			casino_id = None
+
 	# Preparar la fila final con auditoría simple
 	created_at = clock()
 	created_by = actor
 	data_to_insert = {
 		"id": None,  # counters_repo.insert_counter asignará next_id si es necesario
 		"machine_id": int(machine_id),
+		"casino_id": casino_id,
 		"at": data.get("at"),
 		"in_amount": data.get("in_amount", 0.0),
 		"out_amount": data.get("out_amount", 0.0),

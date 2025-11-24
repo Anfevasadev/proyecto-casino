@@ -1,3 +1,2 @@
-id,marca,modelo,serial,asset,denominacion,casino_id,estado,created_at,created_by,updated_at,updated_by,is_active
-1,Motorola,IGT,SN2001,A001,100.0,5,True,2025-11-23 05:32:25,system,2025-11-23 22:40:19,system,True
-2,Motorola,IGT,SN2002,A002,10.0,3,False,2025-11-23 05:34:58,system,2025-11-23 22:41:24,system,False
+id,marca,modelo,serial,asset,denominacion,estado,casino_id,created_at,created_by,updated_at,updated_by,is_active
+1,Samsung,S1,SN4001,A001,Tragamonedas,True,1,2025-11-24 03:50:07,Juan,2025-11-24 03:54:38,Juan,True

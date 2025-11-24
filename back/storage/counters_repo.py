@@ -23,21 +23,21 @@ EXPECTED_COLUMNS = [
 class CountersRepo:
 
 	def __init__(self):
-        self._ensure_file()
+		self._ensure_file()
 
-    def _ensure_file(self):
-        """Crea el CSV con las columnas si no existe."""
-        if not CSV_PATH.exists():
-            # Crear directorio si no existe
-            DATA_DIR.mkdir(parents=True, exist_ok=True)
-            df = pd.DataFrame(columns=EXPECTED_COLUMNS)
-            df.to_csv(CSV_PATH, index=False)
-        else:
-            # Si existe, aseguramos que tenga la columna casino_id (migración simple)
-            df = pd.read_csv(CSV_PATH)
-            if "casino_id" not in df.columns:
-                df["casino_id"] = "" 
-                df.to_csv(CSV_PATH, index=False)
+	def _ensure_file(self):
+		"""Crea el CSV con las columnas si no existe."""
+		if not CSV_PATH.exists():
+			# Crear directorio si no existe
+			CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
+			df = pd.DataFrame(columns=EXPECTED_COLUMNS)
+			df.to_csv(CSV_PATH, index=False)
+		else:
+			# Si existe, aseguramos que tenga la columna casino_id (migración simple)
+			df = pd.read_csv(CSV_PATH)
+			if "casino_id" not in df.columns:
+				df["casino_id"] = "" 
+				df.to_csv(CSV_PATH, index=False)
 
 	def _read_df(self) -> pd.DataFrame:
 		"""
@@ -78,7 +78,7 @@ class CountersRepo:
 		# Convertimos columna ID a numérico para comparar
 		df["id_num"] = pd.to_numeric(df["id"], errors='coerce')
 
-		rows = df[df["id"] == counter_id]
+		rows = df[df["id_num"] == counter_id]
 
 		if rows.empty:
 			return None
@@ -86,29 +86,29 @@ class CountersRepo:
 		row = rows.iloc[0].to_dict()
 
 		# Limpieza de temporales
-        if "id_num" in row: del row["id_num"]
+		if "id_num" in row: del row["id_num"]
 
 		# Normalizar tipos simples
 		try:
-            row["id"] = int(float(row["id"]))
-        except: row["id"] = None
-            
-        try:
-            row["machine_id"] = int(float(row["machine_id"]))
-        except: row["machine_id"] = None
+			row["id"] = int(float(row["id"]))
+		except: row["id"] = None
+			
+		try:
+			row["machine_id"] = int(float(row["machine_id"]))
+		except: row["machine_id"] = None
 
-        for f in ["in_amount", "out_amount", "jackpot_amount", "billetero_amount"]:
-            try:
-                val = row.get(f)
-                row[f] = float(val) if val is not None and str(val).strip() != "" else 0.0
-            except:
-                row[f] = 0.0
+		for f in ["in_amount", "out_amount", "jackpot_amount", "billetero_amount"]:
+			try:
+				val = row.get(f)
+				row[f] = float(val) if val is not None and str(val).strip() != "" else 0.0
+			except:
+				row[f] = 0.0
 
 		try:
-            row["casino_id"] = int(float(row.get("casino_id", 0)))
-        except: row["casino_id"] = None
+			row["casino_id"] = int(float(row.get("casino_id", 0)))
+		except: row["casino_id"] = None
 
-        return row
+		return row
 
 
 	def list_counters(
@@ -182,9 +182,9 @@ class CountersRepo:
 			row["id"] = self.next_id()
 
 		# Asegurar columnas faltantes en el row
-        for col in EXPECTED_COLUMNS:
-            if col not in row:
-                row[col] = None
+		for col in EXPECTED_COLUMNS:
+			if col not in row:
+				row[col] = None
 
 		# Convertir a DataFrame temporal y concatenar
 		df = pd.concat([df, pd.DataFrame([row])], ignore_index=True, sort=False)
@@ -213,95 +213,95 @@ class CountersRepo:
 		self._write_df(df)
 		return self.get_by_id(counter_id)
 
-	def update_batch(self, casino_id: int, fecha_filtro: str, updates: List[Dict], actor: str, timestamp: datetime) -> List[Dict]:
-        """
-        Actualiza múltiples registros filtrando por Casino y Fecha (YYYY-MM-DD).
-        """
-        df = self._read_df()
-        if df.empty:
-            return []
+	def update_batch(self, casino_id: int, fecha_filtro: str, updates: List[Dict], actor: str, timestamp) -> List[Dict]:
+		"""
+		Actualiza múltiples registros filtrando por Casino y Fecha (YYYY-MM-DD).
+		"""
+		df = self._read_df()
+		if df.empty:
+			return []
 
-        now_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        updated_records = []
-        
-        # Mapa de actualizaciones
-        updates_map = {int(u['machine_id']): u for u in updates}
-        machines_to_update = updates_map.keys()
+		now_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+		updated_records = []
+		
+		# Mapa de actualizaciones
+		updates_map = {int(u['machine_id']): u for u in updates}
+		machines_to_update = updates_map.keys()
 
-        # Iterar
-        for idx, row in df.iterrows():
-            
-            # 1. Validar Casino
-            try:
-                row_casino = int(float(row['casino_id']))
-            except (ValueError, TypeError):
-                continue
+		# Iterar
+		for idx, row in df.iterrows():
+			
+			# 1. Validar Casino
+			try:
+				row_casino = int(float(row['casino_id']))
+			except (ValueError, TypeError):
+				continue
 
-            if row_casino != casino_id:
-                continue
+			if row_casino != casino_id:
+				continue
 
-            # 2. Validar Fecha
-            row_at = str(row['at'])
-            if len(row_at) >= 10:
-                row_date = row_at[:10]
-            else:
-                continue
+			# 2. Validar Fecha
+			row_at = str(row['at'])
+			if len(row_at) >= 10:
+				row_date = row_at[:10]
+			else:
+				continue
 
-            if row_date != fecha_filtro:
-                continue
+			if row_date != fecha_filtro:
+				continue
 
-            # 3. Validar Máquina
-            try:
-                m_id = int(float(row['machine_id']))
-            except (ValueError, TypeError):
-                continue
+			# 3. Validar Máquina
+			try:
+				m_id = int(float(row['machine_id']))
+			except (ValueError, TypeError):
+				continue
 
-            if m_id in machines_to_update:
-                cambios = updates_map[m_id]
-                
-                # Aplicar cambios
-                if cambios.get('in_amount') is not None: 
-                    df.at[idx, 'in_amount'] = str(cambios['in_amount'])
-                if cambios.get('out_amount') is not None: 
-                    df.at[idx, 'out_amount'] = str(cambios['out_amount'])
-                if cambios.get('jackpot_amount') is not None: 
-                    df.at[idx, 'jackpot_amount'] = str(cambios['jackpot_amount'])
-                if cambios.get('billetero_amount') is not None: 
-                    df.at[idx, 'billetero_amount'] = str(cambios['billetero_amount'])
-                
-                # Auditoría
-                df.at[idx, 'updated_at'] = now_str
-                df.at[idx, 'updated_by'] = actor
-                
-                # Agregar a resultados
-                res_row = df.loc[idx].to_dict()
-                # Normalizar para retorno
-                res_row['machine_id'] = m_id
-                res_row['casino_id'] = row_casino
-                updated_records.append(res_row)
+			if m_id in machines_to_update:
+				cambios = updates_map[m_id]
+				
+				# Aplicar cambios
+				if cambios.get('in_amount') is not None: 
+					df.at[idx, 'in_amount'] = str(cambios['in_amount'])
+				if cambios.get('out_amount') is not None: 
+					df.at[idx, 'out_amount'] = str(cambios['out_amount'])
+				if cambios.get('jackpot_amount') is not None: 
+					df.at[idx, 'jackpot_amount'] = str(cambios['jackpot_amount'])
+				if cambios.get('billetero_amount') is not None: 
+					df.at[idx, 'billetero_amount'] = str(cambios['billetero_amount'])
+				
+				# Auditoría
+				df.at[idx, 'updated_at'] = now_str
+				df.at[idx, 'updated_by'] = actor
+				
+				# Agregar a resultados
+				res_row = df.loc[idx].to_dict()
+				# Normalizar para retorno
+				res_row['machine_id'] = m_id
+				res_row['casino_id'] = row_casino
+				updated_records.append(res_row)
 
-        if updated_records:
-            self._write_df(df)
+		if updated_records:
+			self._write_df(df)
 
-        return updated_records
+		return updated_records
 
 	# -------------- METODO PARA EL MOUDLO DE REPORTES ---------------
 
-    def list_by_casino_date(self, casino_id: int, fecha_inicio: str, fecha_fin: str) -> List[Dict]:
-        """Filtra registros por casino y rango de fechas."""
-        df = self._read_df()
-        results = []
-        
-        for _, row in df.iterrows():
-            try:
-                if int(float(row['casino_id'])) != casino_id:
-                    continue
-            except: continue
-            
-            row_at = str(row['at'])
-            if len(row_at) >= 10:
-                row_date = row_at[:10]
-                if fecha_inicio <= row_date <= fecha_fin:
-                    results.append(row.fillna("").to_dict())
-                    
-        return results
+	def list_by_casino_date(self, casino_id: int, fecha_inicio: str, fecha_fin: str) -> List[Dict]:
+		"""Filtra registros por casino y rango de fechas."""
+		df = self._read_df()
+		results = []
+		
+		for _, row in df.iterrows():
+			try:
+				if int(float(row['casino_id'])) != casino_id:
+					continue
+			except: continue
+			
+			row_at = str(row['at'])
+			if len(row_at) >= 10:
+				row_date = row_at[:10]
+				if fecha_inicio <= row_date <= fecha_fin:
+					results.append(row.fillna("").to_dict())
+					
+		return results
