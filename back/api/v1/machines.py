@@ -70,3 +70,126 @@
 #   - El manejo de CSV/pandas se hace en storage/machines_repo.py. Aquí solo orquestamos.
 #   - El borrado lógico es un "toggle" de is_active a false; no se elimina la fila.
 # -------------------------------------------
+# back/api/v1/machines.py
+# back/api/v1/machines.py
+
+from fastapi import APIRouter, HTTPException, Query, status
+from typing import List, Optional, Union, Dict, Any, Callable
+from datetime import datetime
+from pydantic import BaseModel
+
+from back.storage.places_repo import PlaceStorage
+from back.domain.machines.create import registrarMaquina
+from back.models.machines import MachineIn, MachineOut, MachineUpdate
+from back.storage.machines_repo import MachinesRepo
+from back.domain.machines.inativation import inactivar_maquina_por_serial
+from back.domain.machines.activation import activar_maquina_por_serial
+from back.domain.machines.update import actualizar_machine
+
+def local_clock() -> datetime:
+    return datetime.now()
+
+places_repo_instance = PlaceStorage()
+
+repo = MachinesRepo()
+router = APIRouter()
+
+
+class SerialAction(BaseModel):
+    serial: str
+    actor: Optional[str] = "system"
+    motivo: Optional[str] = None
+
+@router.post("/", response_model=MachineOut, status_code=201)
+def registrar_maquina(machine: MachineIn, actor: str = "system"):
+    
+    return registrarMaquina(
+        data=machine, 
+        clock=local_clock,
+        machines_repo=repo,
+        places_repo=places_repo_instance,
+        actor=actor
+    )
+
+
+@router.get("/", response_model=List[MachineOut])
+def listar_maquinas(only_active: Optional[bool] = Query(None)):
+    data = repo.list_all()
+
+    if only_active is not None:
+        data = [m for m in data if str(m["estado"]).lower() == str(only_active).lower()]
+
+    return [
+        MachineOut(
+            id=int(m["id"]),
+            marca=m["marca"],
+            modelo=m["modelo"],
+            serial=m["serial"],
+            asset=m["asset"],
+            denominacion=m["denominacion"],
+            estado=str(m["estado"]).lower() == "true",
+            casino_id=int(m["casino_id"])
+        )
+        for m in data
+    ]
+
+
+@router.get("/{machine_id}", response_model=MachineOut)
+def obtener_maquina(machine_id: int):
+    m = repo.get_by_id(machine_id)
+    if not m:
+        raise HTTPException(status_code=404, detail="Machine not found")
+
+    return MachineOut(
+        id=int(m["id"]),
+        marca=m["marca"],
+        modelo=m["modelo"],
+        serial=m["serial"],
+        asset=m["asset"],
+        denominacion=m["denominacion"],
+        estado=str(m["estado"]).lower() == "true",
+        casino_id=int(m["casino_id"])
+    )
+
+
+@router.post("/inactivate")
+def inactivate_machine(payload: SerialAction):
+    try:
+        result = inactivar_maquina_por_serial(
+            payload.serial, actor=payload.actor or "system", motivo=payload.motivo
+        )
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.post("/activate")
+def activate_machine(payload: SerialAction):
+    try:
+        result = activar_maquina_por_serial(payload.serial, actor=payload.actor or "system", note=payload.motivo)
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.put("/{machine_id}", response_model=MachineOut, status_code=status.HTTP_200_OK)
+def actualizar_maquina(machine_id: int, cambios: MachineUpdate, actor: str = "system"):
+    try:
+        updated_row = actualizar_machine(
+            machine_id=machine_id,
+            cambios=cambios,
+            clock=local_clock,            
+            machines_repo=repo,            
+            places_repo=places_repo_instance, 
+            actor=actor                    
+        )
+        
+        return updated_row
+        
+    except HTTPException:
+        raise 
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Error interno al procesar la actualización: {str(exc)}"
+        )
