@@ -88,6 +88,27 @@ def inactivar_casino(casino_id: int, actor: str = "system"):
 
 
 # --------------------------------------
+# Activar CASINO
+# --------------------------------------
+@router.put("/casino/{casino_id}/activar")
+def activar_casino(casino_id: int, actor: str = "system"):
+    """
+    Marca un casino como activo usando la capa de storage
+    """
+    try:
+        PlaceDomain.activar_casino(casino_id, actor)
+        return {
+            "mensaje": "Casino activado correctamente",
+            "id": casino_id,
+            "actor": actor
+        }
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Casino no encontrado")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --------------------------------------
 # CREAR CASINO
 # --------------------------------------
 @router.post("/casino", response_model=PlaceOut)

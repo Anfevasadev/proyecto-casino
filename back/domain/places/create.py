@@ -83,6 +83,20 @@ class PlaceDomain:
             raise Exception(f"Error al inactivar casino: {str(e)}")
 
     @staticmethod
+    def activar_casino(casino_id: int, actor: str = "system") -> bool:
+        """
+        Activa un casino usando la capa de almacenamiento.
+        """
+        from back.storage.places_repo import PlaceStorage
+
+        try:
+            return PlaceStorage.activar(casino_id, actor=actor)
+        except KeyError as e:
+            raise KeyError(str(e))
+        except Exception as e:
+            raise Exception(f"Error al activar casino: {str(e)}")
+
+    @staticmethod
     def update_place(place_id: int, cambios: dict, actor: str = "system") -> dict:
         """
         Actualiza un casino respetando reglas de negocio y delega la persistencia al repo.
