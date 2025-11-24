@@ -25,18 +25,20 @@ def _read_df() -> pd.DataFrame:
         df = pd.read_csv(CSV_PATH)
     else:
         df = pd.DataFrame(columns=EXPECTED_COLUMNS)
+
     # Asegurar columnas completas
     for col in EXPECTED_COLUMNS:
         if col not in df.columns:
             df[col] = None
-    return df[EXPECTED_COLUMNS]
-  
-def _to_bool(value: Any) -> bool:
-    return str(value).lower() == "true"
-  
-def _write_df(df: pd.DataFrame) -> None:
-    df.to_csv(CSV_PATH, index=False)
 
+    # 🔥 NORMALIZACIÓN DE DATOS PARA LOGIN 🔥
+    df["username"] = df["username"].astype(str).str.strip().str.lower()
+    df["password"] = df["password"].astype(str).str.strip()
+
+    # Normalizar booleanos
+    df["is_active"] = df["is_active"].astype(str).str.lower()
+
+    return df[EXPECTED_COLUMNS]
 
 def next_id() -> int:
     df = _read_df()
