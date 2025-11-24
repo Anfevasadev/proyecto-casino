@@ -4,7 +4,7 @@
 import axios from 'axios'
 
 const client = axios.create({
-  baseURL: 'https://sturdy-space-halibut-qp4jpvqx55j2x97x-8000.app.github.dev/api/v1',
+  baseURL: 'https://ideal-barnacle-4jp4wg7r55qwf75sqx-8000.app.github.dev/api/v1'
   timeout: 8000,
   headers: {
     'Content-Type': 'application/json'
