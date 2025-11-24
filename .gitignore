@@ -41,8 +41,5 @@ htmlcov/
 # Logs temporales (si los usas)
 *.log
 
-# ⚠️ Importante:
-# NO ignores la carpeta data/ ni sus CSV, son parte del proyecto.
-# Puedes ignorar archivos temporales dentro de data, por ejemplo:
-data/*.tmp
-data/*_backup.csv
+data/
+data/*.csv

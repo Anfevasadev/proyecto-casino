@@ -33,3 +33,52 @@
 #   - Si en el futuro se agregan "eventos" de inicio (startup) para preparar rutas
 #     u otro setup, documentarlo aquí con claridad (pero mantenerlo mínimo por ser académico).
 # ----------------------------------------
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .api.router import api_router
+
+
+def create_app() -> FastAPI:
+    """Factory to create and configure the FastAPI application.
+
+    Returns
+    -------
+    FastAPI
+        Configured application ready to run with Uvicorn.
+    """
+    app = FastAPI(title="Demo Cuadre Casino", version="0.1.0")
+
+    # Configuración CORS para permitir peticiones desde el front (Vite por defecto en 5173)
+    allowed_origins = ["*"]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    @app.get("/health")
+    def health() -> dict[str, str]:
+        """Simple health check endpoint.
+
+        Returns a JSON payload indicating the service is running.
+
+        Returns
+        -------
+        dict[str, str]
+            A status payload containing a static message.
+        """
+        return {"status": "ok"}
+
+    # Mount the versioned API under /api. Additional routers may be added
+    # inside api/router.py.
+    app.include_router(api_router, prefix="/api")
+    return app
+
+
+# Application instance used by Uvicorn. When running ``uvicorn back.main:app``
+# Uvicorn will import this module and look for an ``app`` attribute. The
+# ``create_app`` factory is called to ensure fresh configuration on import.
+app = create_app()

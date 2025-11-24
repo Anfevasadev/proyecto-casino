@@ -57,3 +57,70 @@
 #   - fastapi (APIRouter, HTTPException, status)
 #   - pydantic (modelos)
 # -------------------------------------------
+
+from fastapi import APIRouter, HTTPException, status
+from back.models.place_models import CasinoIn, CasinoOut
+from back.domain.place_domain import Casino
+
+
+# Crear router
+router = APIRouter(
+    prefix="/places",
+    tags=["Places - Casinos"]
+)
+
+
+@router.post(
+    "/",
+    response_model=CasinoOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear un nuevo casino",
+    description="""
+    Crea un nuevo casino en el sistema.
+    
+    **Campos obligatorios según UML:**
+    - nombre: Denominación oficial del casino (3-100 caracteres)
+    - direccion: Ubicación física completa (10-200 caracteres)
+    - codigoCasino: Identificador único (3-20 caracteres, alfanumérico)
+    
+    **Validaciones:**
+    - El codigoCasino debe ser único
+    - Todos los campos son obligatorios
+    - El código se convierte automáticamente a mayúsculas
+    """
+)
+def crearCasino(casino: CasinoIn):
+    """
+    Endpoint que llama al método crearCasino() del UML
+    
+    Args:
+        casino: Datos del casino a crear
+        
+    Returns:
+        CasinoOut: Casino creado con ID asignado
+        
+    Raises:
+        400: Si el código ya existe o hay errores de validación
+        500: Error interno del servidor
+    """
+    try:
+        # Llamar al método crearCasino() según UML
+        nuevo_casino = Casino.crearCasino(
+            casino_data=casino,
+            created_by="system"  # TODO: Obtener usuario autenticado
+        )
+        
+        return nuevo_casino
+        
+    except ValueError as e:
+        # Error de validación (código duplicado, etc)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        # Error inesperado
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al crear el casino: {str(e)}"
+        )
