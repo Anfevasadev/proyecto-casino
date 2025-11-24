@@ -60,9 +60,13 @@
 
 from fastapi import APIRouter, HTTPException
 from back.domain.places.create import PlaceDomain
+from back.models.places import PlaceIn, PlaceOut
 
 router = APIRouter()
 
+# --------------------------------------
+# INACTIVAR CASINO
+# --------------------------------------
 @router.put("/casino/{casino_id}/inactivar")
 def inactivar_casino(casino_id: int, actor: str = "system"):
     """
@@ -80,13 +84,10 @@ def inactivar_casino(casino_id: int, actor: str = "system"):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-from fastapi import APIRouter, HTTPException
-from back.models.places import PlaceIn, PlaceOut
-from back.domain.places.create import PlaceDomain
 
-router = APIRouter()
-
-
+# --------------------------------------
+# CREAR CASINO
+# --------------------------------------
 @router.post("/casino", response_model=PlaceOut)
 def crear_casino(place: PlaceIn, actor: str = "system"):
     """
@@ -96,8 +97,6 @@ def crear_casino(place: PlaceIn, actor: str = "system"):
         created = PlaceDomain.create_place(place, created_by=actor)
         return created
     except ValueError as e:
-        # Errores de negocio (código duplicado, validación)
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        # Errores inesperados
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
