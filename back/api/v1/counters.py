@@ -1,19 +1,28 @@
-from datetime import datetime
-
+from datetime import datetime, date
+from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query, Path, status
 
-from back.models.counters import CounterIn, CounterOut, CounterOutWithMachine, MachineSimple
-from back.domain.counters.create import create_counter, NotFoundError
+from back.models.counters import CounterIn, CounterOut, CounterOutWithMachine, MachineSimple, CounterUpdateBatch
 
-from back.storage import counters_repo as repo_counters
+from back.domain.counters.create import create_counter, NotFoundError
+from back.domain.counters.update import modificar_contadores_batch
+from back.domain.counters.read import consultar_contadores_reporte
+
+from back.storage.counters_repo import CountersRepo
 from back.storage.machines_repo import MachinesRepo
+from back.storage.place_repo import PlaceStorage
+
 
 # Instancia de repo para máquinas (coherente con otros routers)
+repo_counters = CountersRepo()
 repo_machines = MachinesRepo()
-
+repo_places = PlaceStorage()
 
 router = APIRouter()
 
+def local_clock() -> datetime:
+    """Reloj local que retorna datetime."""
+    return datetime.now()
 
 def _clock_local() -> str:
 	"""Reloj local simple: devuelve 'YYYY-MM-DD HH:MM:SS'."""
@@ -31,8 +40,7 @@ def list_counters(
 	ascending: bool = Query(True),
 ):
 	"""
-	Endpoint para listar contadores. Los filtros son simples y pensados
-	para uso académico (CSV como almacenamiento).
+	Endpoint para listar contadores.
 	"""
 	results = repo_counters.list_counters(
 		machine_id=machine_id,
@@ -56,7 +64,7 @@ def get_counter(counter_id: int = Path(..., ge=1)):
 	return CounterOut(**row)
 
 
-@router.post("", response_model=CounterOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=CounterOutWithMachine, status_code=status.HTTP_201_CREATED)
 def post_counter(body: CounterIn):
 	"""
 	Crear un nuevo contador. Delegamos reglas de negocio a `create_counter`.
@@ -108,3 +116,50 @@ def post_counter(body: CounterIn):
 	except ValueError as e:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
+@router.put("/modificacion/{casino_id}/{fecha}", response_model=List[CounterOut])
+def modificar_contadores(
+    casino_id: int = Path(..., description="ID del Casino"),
+    fecha: date = Path(..., description="Fecha de los contadores (YYYY-MM-DD)"),
+    payload: CounterUpdateBatch = Body(..., description="Lista de máquinas y sus nuevos valores"),
+    actor: str = Query("system", description="Usuario que realiza la modificación")
+):
+    """
+    Actualiza contadores para una lista de máquinas en un Casino y Fecha específicos.
+    """
+    try:
+        return modificar_contadores_batch(
+            casino_id=casino_id,
+            fecha=fecha,
+            batch_data=payload,
+            counters_repo=repo_counters,
+            places_repo=repo_places,
+            clock=local_clock,       
+            actor=actor
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error interno: {exc}")
+
+
+@router.get("/reportes/consulta", response_model=List[CounterOut])
+def consultar_reportes(
+    casino_id: int = Query(..., description="ID del Casino"),
+    start_date: date = Query(..., description="Fecha Inicio (YYYY-MM-DD)"),
+    end_date: date = Query(..., description="Fecha Fin (YYYY-MM-DD)")
+):
+    """
+    Endpoint para integración con el Módulo de Reportes.
+    Filtra registros por rango de fechas y casino.
+    """
+    try:
+        return consultar_contadores_reporte(
+            casino_id=casino_id,
+            start_date=start_date,
+            end_date=end_date,
+            counters_repo=repo_counters
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error interno: {exc}")
