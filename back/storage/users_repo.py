@@ -63,7 +63,7 @@ def insert_user(row: Dict[str, Any]) -> Dict[str, Any]:
 
 def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
     df = _read_df()
-    subset = df[df["username"] == username]
+    subset = df[df["username"] == username.strip().lower()]
     if subset.empty:
         return None
     user = subset.iloc[0].to_dict()
