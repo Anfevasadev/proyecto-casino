@@ -4,14 +4,14 @@
 import axios from 'axios'
 
 const client = axios.create({
-  baseURL: 'https://ideal-barnacle-4jp4wg7r55qwf75sqx-8000.app.github.dev/api/v1'
+  baseURL: 'https://ideal-barnacle-4jp4wg7r55qwf75sqx-8000.app.github.dev/api/v1',
   timeout: 8000,
   headers: {
     'Content-Type': 'application/json'
   }
 })
 
-// Ejemplo de interceptor de respuesta para extraer mensajes de error legibles
+// Interceptor de errores para mostrar mensajes legibles
 client.interceptors.response.use(
   (response) => response,
   (error) => {
