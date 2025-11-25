@@ -72,12 +72,18 @@ from fastapi import APIRouter, HTTPException, Path, status
 from back.models.users import UserIn, UserOut, UserUpdate
 from back.domain.users.create import create_user
 from back.domain.users.update import NotFoundError, update_user
+from back.domain.users.delete import inactivar_usuario, NotFoundError as DeleteNotFoundError
 
 from back.storage import users_repo as repo
 
 
 
 router = APIRouter()
+
+def _clock_local() -> str:
+	# Formato local sencillo; README menciona YYYY-MM-DD HH:MM:SS
+	return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 
 @router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user_endpoint(user: UserIn):
@@ -87,10 +93,22 @@ def create_user_endpoint(user: UserIn):
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-def _clock_local() -> str:
-	# Formato local sencillo; README menciona YYYY-MM-DD HH:MM:SS
-	return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+@router.delete("/{user_id}", status_code=status.HTTP_200_OK)
+def delete_user(user_id: int = Path(..., ge=1)):
+	"""
+	Inactiva un usuario (borrado lógico).
+	Establece is_active=False e is_deleted=True.
+	"""
+	try:
+		result = inactivar_usuario(
+			user_id=user_id,
+			clock=_clock_local,
+			repo=repo,
+			actor="api"
+		)
+		return result
+	except DeleteNotFoundError as e:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 @router.put("/{user_id}", response_model=UserOut, status_code=status.HTTP_200_OK)
 def put_user(

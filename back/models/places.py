@@ -1,3 +1,7 @@
+
+# ...existing code...
+
+
 # -------------------------------------------
 # back/models/places.py
 # Propósito:
@@ -105,3 +109,45 @@ class PlaceOut(BaseModel):
     estado: bool = True
     created_at: Optional[str] = None
     created_by: Optional[str] = None
+
+class PlaceUpdate(BaseModel):
+    """
+    Modelo de entrada para la edición de un casino.
+    Todos los campos son opcionales.
+    """
+    nombre: Optional[str] = Field(
+        None,
+        min_length=3,
+        max_length=100,
+        description="Denominación oficial del casino"
+    )
+    direccion: Optional[str] = Field(
+        None,
+        min_length=10,
+        max_length=200,
+        description="Ubicación física completa del establecimiento"
+    )
+    estado: Optional[bool] = Field(
+        None,
+        description="Estado del casino (activo/inactivo)"
+    )
+
+    @field_validator('nombre')
+    @classmethod
+    def validate_nombre(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        v = v.strip()
+        if not v:
+            raise ValueError("El nombre del casino no puede estar vacío")
+        return v
+
+    @field_validator('direccion')
+    @classmethod
+    def validate_direccion(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        v = v.strip()
+        if not v:
+            raise ValueError("La dirección del casino no puede estar vacía")
+        return v

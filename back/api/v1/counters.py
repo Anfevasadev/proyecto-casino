@@ -65,17 +65,15 @@ def get_counter(counter_id: int = Path(..., ge=1)):
 
 
 @router.post("", response_model=CounterOutWithMachine, status_code=status.HTTP_201_CREATED)
+
 def post_counter(body: CounterIn):
 	"""
-	Crear un nuevo contador. Delegamos reglas de negocio a `create_counter`.
-	Se usa `repo_counters` y `repo_machines` directamente (patrón simple del proyecto).
+	Crear un nuevo contador. Valida campos obligatorios y unicidad por casino-fecha-máquina.
 	"""
 	# Validación explícita en la capa de API: existe la máquina y está activa?
 	m_check = repo_machines.get_by_id(int(body.machine_id)) if body.machine_id is not None else None
 	if m_check is None:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Máquina con id {body.machine_id} no encontrada")
-	# También validar estado activo (coincide con la validación en domain pero repetimos
-	# aquí para dar feedback inmediato desde la API). El CSV usa 'estado' o 'is_active'.
 	is_active_val = m_check.get("is_active") or m_check.get("estado")
 	is_active = False
 	if isinstance(is_active_val, bool):
@@ -84,9 +82,33 @@ def post_counter(body: CounterIn):
 		is_active = False
 	else:
 		is_active = str(is_active_val).lower() == "true"
-
 	if not is_active:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Máquina {body.machine_id} no está activa")
+
+	# Validar campos obligatorios
+	for field in ["in_amount", "out_amount", "jackpot_amount", "billetero_amount"]:
+		value = getattr(body, field, None)
+		if value is None:
+			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"El campo '{field}' es obligatorio.")
+
+	# Validar unicidad: no debe existir ya un registro para casino-fecha-máquina
+	at_fecha = body.at[:10] if body.at else _clock_local()[:10]
+	casino_id = m_check.get("casino_id")
+	if casino_id is not None:
+		try:
+			casino_id = int(float(casino_id))
+		except Exception:
+			casino_id = None
+	existentes = repo_counters.list_counters(
+		machine_id=body.machine_id,
+		date_from=at_fecha,
+		date_to=at_fecha,
+		limit=1
+	)
+	for ex in existentes:
+		# Coincidencia exacta de casino, fecha y máquina
+		if str(ex.get("casino_id")) == str(casino_id) and str(ex.get("at", ""))[:10] == at_fecha:
+			raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ya existe un registro para esta máquina, casino y fecha.")
 
 	try:
 		created = create_counter(

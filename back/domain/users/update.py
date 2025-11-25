@@ -24,6 +24,21 @@ def update_user(user_id: int, cambios: Dict[str, Any], clock, repo, actor: str) 
 
 	allowed = {"username", "password", "role", "is_active"}
 	to_update = {k: v for k, v in cambios.items() if k in allowed and v is not None}
+
+	# Sincronizar estado lógico: is_active <-> is_deleted
+	if "is_active" in to_update:
+		is_active_val = bool(to_update["is_active"])  # asegurar bool
+		if is_active_val:
+			# Usuario activo => no eliminado
+			to_update["is_deleted"] = False
+			to_update["deleted_at"] = None
+			to_update["deleted_by"] = None
+		else:
+			# Usuario inactivo => marcado como eliminado
+			to_update["is_deleted"] = True
+			to_update["deleted_at"] = clock()
+			to_update["deleted_by"] = actor
+
 	to_update["updated_at"] = clock()
 	to_update["updated_by"] = actor
 

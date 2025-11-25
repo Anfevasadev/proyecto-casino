@@ -1,3 +1,4 @@
+
 # -------------------------------------------
 # back/storage/machines_repo.py
 # Propósito:
@@ -117,3 +118,17 @@ class MachinesRepo:
                     return True
         return False
 
+    def listar(self, only_active: bool = None):
+        """
+        Devuelve la lista de máquinas filtrando por estado si se indica.
+        only_active=True: solo activas (estado==True)
+        only_active=False: solo inactivas (estado==False)
+        only_active=None: todas
+        """
+        self.data = self._load()
+        if only_active is True:
+            return [m for m in self.data if str(m.get("estado", "")).lower() == "true"]
+        elif only_active is False:
+            return [m for m in self.data if str(m.get("estado", "")).lower() == "false"]
+        else:
+            return self.data

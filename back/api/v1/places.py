@@ -59,6 +59,7 @@
 # -------------------------------------------
 
 from fastapi import APIRouter, HTTPException
+from back.models.places import PlaceUpdate
 from back.domain.places.create import PlaceDomain
 from back.domain.places.management import CasinoManagement
 from back.storage.places_repo import PlaceStorage
@@ -141,9 +142,10 @@ def listar_casinos(only_active: bool = True, limit: int | None = None, offset: i
 # MODIFICAR CASINO
 # --------------------------------------
 @router.put("/casino/{casino_id}")
-def modificar_casino(casino_id: int, cambios: dict, actor: str = "system"):
+def modificar_casino(casino_id: int, body: PlaceUpdate, actor: str = "system"):
     """Actualiza campos editables de un casino (no permite cambiar el código)."""
     try:
+        cambios = body.model_dump(exclude_unset=True)
         updated = PlaceDomain.update_place(casino_id, cambios, actor=actor)
         return updated
     except KeyError:

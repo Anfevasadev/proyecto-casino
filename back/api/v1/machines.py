@@ -152,11 +152,16 @@ def registrar_maquina(machine: MachineIn, actor: str = "system"):
 
 
 @router.get("/", response_model=List[MachineOut])
-def listar_maquinas(only_active: Optional[bool] = Query(None)):
-    data = repo.list_all()
-
-    if only_active is not None:
-        data = [m for m in data if str(m.get("is_active", "True")).lower() == str(only_active).lower()]
+def listar_maquinas(
+    only_active: Optional[bool] = Query(None),
+    casino_id: Optional[int] = Query(None, description="ID del casino para filtrar máquinas")
+):
+    """
+    Lista máquinas, permitiendo filtrar por casino y estado.
+    """
+    data = repo.listar(only_active=only_active)
+    if casino_id is not None:
+        data = [m for m in data if str(m.get("casino_id")) == str(casino_id)]
 
     return [
         MachineOut(

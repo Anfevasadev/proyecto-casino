@@ -100,11 +100,14 @@ class PlaceStorage:
         df = pd.read_csv(PLACES_CSV)
         
         # VALIDACIÓN: Verificar que el código no exista
-        if not df.empty and codigo_casino.upper() in df['codigo_casino'].str.upper().values:
-            raise ValueError(
-                f"Ya existe un casino con el código '{codigo_casino}'. "
-                "El código debe ser único."
-            )
+        if not df.empty:
+            # Asegurar que la columna sea string antes de usar .str
+            codigos = df['codigo_casino'].astype(str).str.upper()
+            if codigo_casino.upper() in codigos.values:
+                raise ValueError(
+                    f"Ya existe un casino con el código '{codigo_casino}'. "
+                    "El código debe ser único."
+                )
         
         # Crear nuevo registro
         new_id = PlaceStorage._get_next_id()
@@ -210,8 +213,13 @@ class PlaceStorage:
         if df.empty:
             return []
 
-        if only_active and 'estado' in df.columns:
-            df = df[df['estado'] == True]
+
+        # Filtro correcto según only_active
+        if 'estado' in df.columns:
+            if only_active is True:
+                df = df[df['estado'] == True]
+            elif only_active is False:
+                df = df[df['estado'] == False]
 
         # Orden por id para consistencia
         if 'id' in df.columns:

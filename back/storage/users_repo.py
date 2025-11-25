@@ -40,6 +40,16 @@ def _read_df() -> pd.DataFrame:
 
     return df[EXPECTED_COLUMNS]
 
+def _write_df(df: pd.DataFrame) -> None:
+    """Escribir DataFrame al CSV respetando el orden de columnas."""
+    df.to_csv(CSV_PATH, index=False)
+
+def _to_bool(value: Any) -> bool:
+    """Convertir un valor a booleano."""
+    if isinstance(value, bool):
+        return value
+    return str(value).lower() == "true"
+
 def next_id() -> int:
     df = _read_df()
     if df.empty:
@@ -48,9 +58,11 @@ def next_id() -> int:
     ids = [int(x) for x in df["id"].dropna().tolist() if str(x).strip() != ""]
     return (max(ids) + 1) if ids else 1
 
-def username_exists(username: str) -> bool:
+def username_exists(username: str, exclude_id: Optional[int] = None) -> bool:
     df = _read_df()
     subset = df[(df["username"] == username) & (df["is_deleted"].astype(str).str.lower() != "true")]
+    if exclude_id is not None:
+        subset = subset[subset["id"] != exclude_id]
     return not subset.empty
 
 def insert_user(row: Dict[str, Any]) -> Dict[str, Any]:
@@ -89,7 +101,8 @@ def update_user_row(user_id: int, cambios: Dict[str, Any]) -> Optional[Dict[str,
         return None
     i = idx[0]
 
-    allowed_cols = {"username", "password", "role", "is_active", "updated_at", "updated_by"}
+    allowed_cols = {"username", "password", "role", "is_active", "updated_at", "updated_by", 
+                    "is_deleted", "deleted_at", "deleted_by"}
     for k, v in cambios.items():
         if k in allowed_cols:
             df.at[i, k] = v
