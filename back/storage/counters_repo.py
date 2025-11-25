@@ -259,6 +259,12 @@ class CountersRepo:
 			if m_id in machines_to_update:
 				cambios = updates_map[m_id]
 				
+				# 4. Validar hora específica si se proporciona en el JSON
+				if cambios.get('at') is not None:
+					# Si viene 'at' en el JSON, debe coincidir exactamente
+					if row_at.strip() != str(cambios['at']).strip():
+						continue  # Este no es el contador específico que buscamos
+				
 				# Aplicar cambios
 				if cambios.get('in_amount') is not None: 
 					df.at[idx, 'in_amount'] = str(cambios['in_amount'])

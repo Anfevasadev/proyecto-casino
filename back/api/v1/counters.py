@@ -20,6 +20,46 @@ repo_places = PlaceStorage()
 
 router = APIRouter()
 
+
+@router.get("/machines-by-casino/{casino_id}", response_model=list[MachineSimple], status_code=status.HTTP_200_OK)
+def get_machines_by_casino(casino_id: int = Path(..., ge=1, description="ID del casino")):
+	"""
+	Obtener todas las máquinas de un casino específico (activas e inactivas).
+	Este endpoint se usa antes de crear un contador para seleccionar la máquina.
+	"""
+	# Validar que el casino existe
+	casino = repo_places.obtener_por_id(casino_id)
+	if casino is None:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Casino con id {casino_id} no encontrado")
+	
+	# Validar que el casino esté activo
+	is_active_val = casino.get("estado")
+	is_active = str(is_active_val).lower() == "true" if is_active_val else False
+	if not is_active:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Casino {casino_id} no está activo")
+	
+	# Obtener todas las máquinas del casino (activas e inactivas)
+	machines = repo_machines.listar(only_active=None, casino_id=casino_id)
+	
+	if not machines:
+		return []
+	
+	# Convertir a MachineSimple
+	result = []
+	for m in machines:
+		try:
+			result.append(MachineSimple(
+				id=int(m.get("id")),
+				marca=m.get("marca"),
+				modelo=m.get("modelo"),
+				serial=m.get("serial"),
+				asset=m.get("asset"),
+			))
+		except Exception:
+			continue
+	
+	return result
+
 def local_clock() -> datetime:
     """Reloj local que retorna datetime."""
     return datetime.now()
@@ -27,32 +67,6 @@ def local_clock() -> datetime:
 def _clock_local() -> str:
 	"""Reloj local simple: devuelve 'YYYY-MM-DD HH:MM:SS'."""
 	return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-
-@router.get("", response_model=list[CounterOut], status_code=status.HTTP_200_OK)
-def list_counters(
-	machine_id: int | None = Query(None, ge=1),
-	date_from: str | None = Query(None),
-	date_to: str | None = Query(None),
-	limit: int = Query(100, ge=1, le=1000),
-	offset: int = Query(0, ge=0),
-	sort_by: str = Query("at"),
-	ascending: bool = Query(True),
-):
-	"""
-	Endpoint para listar contadores.
-	"""
-	results = repo_counters.list_counters(
-		machine_id=machine_id,
-		date_from=date_from,
-		date_to=date_to,
-		limit=limit,
-		offset=offset,
-		sort_by=sort_by,
-		ascending=ascending,
-	)
-	# mapear a CounterOut (FastAPI/Pydantic hará validación ligera)
-	return [CounterOut(**r) for r in results]
 
 
 @router.get("/{counter_id}", response_model=CounterOut, status_code=status.HTTP_200_OK)
@@ -69,11 +83,23 @@ def get_counter(counter_id: int = Path(..., ge=1)):
 def post_counter(body: CounterIn):
 	"""
 	Crear un nuevo contador. Valida campos obligatorios y unicidad por casino-fecha-máquina.
+	El casino_id debe coincidir con el casino_id de la máquina seleccionada.
 	"""
+	# Validar que el casino existe
+	casino = repo_places.obtener_por_id(body.casino_id)
+	if casino is None:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Casino con id {body.casino_id} no encontrado")
+	
+	# Validar que el casino esté activo
+	is_active_casino = str(casino.get("estado", "")).lower() == "true"
+	if not is_active_casino:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Casino {body.casino_id} no está activo")
+	
 	# Validación explícita en la capa de API: existe la máquina y está activa?
 	m_check = repo_machines.get_by_id(int(body.machine_id)) if body.machine_id is not None else None
 	if m_check is None:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Máquina con id {body.machine_id} no encontrada")
+	
 	is_active_val = m_check.get("is_active") or m_check.get("estado")
 	is_active = False
 	if isinstance(is_active_val, bool):
@@ -84,6 +110,20 @@ def post_counter(body: CounterIn):
 		is_active = str(is_active_val).lower() == "true"
 	if not is_active:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Máquina {body.machine_id} no está activa")
+	
+	# Validar que el casino_id de la máquina coincida con el casino_id enviado
+	machine_casino_id = m_check.get("casino_id")
+	if machine_casino_id is not None:
+		try:
+			machine_casino_id = int(float(machine_casino_id))
+		except Exception:
+			machine_casino_id = None
+	
+	if machine_casino_id != body.casino_id:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST, 
+			detail=f"La máquina {body.machine_id} no pertenece al casino {body.casino_id}"
+		)
 
 	# Validar campos obligatorios
 	for field in ["in_amount", "out_amount", "jackpot_amount", "billetero_amount"]:
@@ -93,12 +133,7 @@ def post_counter(body: CounterIn):
 
 	# Validar unicidad: no debe existir ya un registro para casino-fecha-máquina
 	at_fecha = body.at[:10] if body.at else _clock_local()[:10]
-	casino_id = m_check.get("casino_id")
-	if casino_id is not None:
-		try:
-			casino_id = int(float(casino_id))
-		except Exception:
-			casino_id = None
+	casino_id = body.casino_id
 	existentes = repo_counters.list_counters(
 		machine_id=body.machine_id,
 		date_from=at_fecha,

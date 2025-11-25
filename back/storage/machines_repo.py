@@ -118,17 +118,25 @@ class MachinesRepo:
                     return True
         return False
 
-    def listar(self, only_active: bool = None):
+    def listar(self, only_active: bool = None, casino_id: int = None):
         """
-        Devuelve la lista de máquinas filtrando por estado si se indica.
+        Devuelve la lista de máquinas filtrando por estado y/o casino.
         only_active=True: solo activas (estado==True)
         only_active=False: solo inactivas (estado==False)
         only_active=None: todas
+        casino_id: filtrar por casino específico
         """
         self.data = self._load()
+        result = self.data
+        
+        # Filtrar por casino si se especifica
+        if casino_id is not None:
+            result = [m for m in result if str(m.get("casino_id", "")) == str(casino_id)]
+        
+        # Filtrar por estado
         if only_active is True:
-            return [m for m in self.data if str(m.get("estado", "")).lower() == "true"]
+            result = [m for m in result if str(m.get("estado", "")).lower() == "true"]
         elif only_active is False:
-            return [m for m in self.data if str(m.get("estado", "")).lower() == "false"]
-        else:
-            return self.data
+            result = [m for m in result if str(m.get("estado", "")).lower() == "false"]
+        
+        return result

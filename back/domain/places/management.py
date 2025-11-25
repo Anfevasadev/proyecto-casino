@@ -109,6 +109,8 @@ class CasinoManagement:
         """Devuelve la lista de máquinas asociadas a un casino.
 
         Usa `MachinesRepo` y filtra por `casino_id` (campo usado en CSV como `casino_id`).
+        Si only_active=True, devuelve solo activas.
+        Si only_active=False, devuelve solo inactivas.
         """
         machines_repo = MachinesRepo()
         all_machines = machines_repo.list_all()
@@ -125,14 +127,22 @@ class CasinoManagement:
             if m_casino != int(casino_id):
                 continue
 
-            if only_active:
-                estado = m.get('estado')
-                # aceptar True/False en varios formatos
-                if isinstance(estado, str):
-                    if estado.strip().lower() in ['false', '0', 'no', 'n']:
-                        continue
-                elif estado in [False, 0]:
-                    continue
+            # Determinar si la máquina está activa
+            estado = m.get('estado') or m.get('is_active')
+            is_machine_active = False
+            
+            if isinstance(estado, str):
+                is_machine_active = estado.strip().lower() in ['true', '1', 'yes', 'y', 't']
+            elif isinstance(estado, bool):
+                is_machine_active = estado
+            elif estado in [1, '1']:
+                is_machine_active = True
+
+            # Filtrar según only_active
+            if only_active and not is_machine_active:
+                continue  # Solo queremos activas, esta es inactiva
+            elif not only_active and is_machine_active:
+                continue  # Solo queremos inactivas, esta es activa
 
             result.append(m)
 

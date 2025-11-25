@@ -34,6 +34,7 @@ class CounterIn(BaseModel):
 	Modelo para crear un contador.
 
 	Campos:
+	- casino_id: id del casino al que pertenece (obligatorio).
 	- machine_id: id de la máquina a la que pertenece el registro (obligatorio).
 	- at: fecha/hora del registro en formato local 'YYYY-MM-DD HH:MM:SS' (opcional).
 	- in_amount/out_amount/jackpot_amount/billetero_amount: montos numéricos >= 0.
@@ -43,6 +44,7 @@ class CounterIn(BaseModel):
 	- Los montos tienen un `validator` para asegurar que no sean negativos.
 	"""
 
+	casino_id: int = Field(..., ge=1, description="ID del casino (entero positivo)")
 	machine_id: int = Field(..., ge=1, description="ID de la máquina (entero positivo)")
 	at: Optional[str] = Field(None, description="Fecha local 'YYYY-MM-DD HH:MM:SS'")
 	in_amount: float = Field(0.0, ge=0.0)
@@ -65,10 +67,14 @@ class CounterUpdate(BaseModel):
 	Modelo para correcciones parciales de un contador.
 
 	Todos los campos son opcionales; si vienen, se validan.
+	
+	Nota sobre 'at':
+	- Si NO se incluye 'at': modifica TODOS los contadores de esa máquina en la fecha de la URL
+	- Si SÍ se incluye 'at': modifica SOLO el contador con esa fecha/hora exacta
 	"""
 
 	machine_id: int = Field(..., ge=1, description="ID de la máquina a modificar")
-	at: Optional[str] = Field(None)
+	at: Optional[str] = Field(None, description="Fecha/hora específica para filtrar un único contador (opcional)")
 	in_amount: Optional[float] = Field(None, ge=0.0)
 	out_amount: Optional[float] = Field(None, ge=0.0)
 	jackpot_amount: Optional[float] = Field(None, ge=0.0)
@@ -110,6 +116,7 @@ class CounterOut(BaseModel):
 			"example": {
 				"id": 1,
 				"machine_id": 10,
+				"casino_id": 1,
 				"at": "2025-11-23 12:00:00",
 				"in_amount": 1200.0,
 				"out_amount": 800.0,
