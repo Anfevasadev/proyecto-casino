@@ -26,6 +26,8 @@ from back.domain.balances.casino_balance import (
     LockedError
 )
 
+from back.domain.balances.machine_balance import calcular_cuadre_maquina
+
 from back.domain.balances.report import generar_reporte_consolidado_casino
 from back.domain.balances.export import generar_pdf_reporte, generar_excel_reporte
 
@@ -278,7 +280,92 @@ def generar_reporte_detallado_casino(
         )
 
 
-# ============ ENDPOINTS PARA MACHINE BALANCES (para completitud) ============
+# ============ ENDPOINTS PARA MACHINE BALANCES ============
+
+@router.post(
+    "/machines/generate",
+    response_model=MachineBalanceOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Generar cuadre de máquina",
+    description="Calcula el cuadre de una máquina individual para un periodo específico"
+)
+def generar_cuadre_maquina(data: MachineBalanceIn):
+    """
+    Genera un cuadre de una máquina individual basándose en sus contadores.
+    
+    El sistema implementa la siguiente lógica:
+    1. Selección de la máquina (debe estar activa)
+    2. Definición del rango de fechas (period_start, period_end)
+    3. Recuperación de contadores inicial y final
+    4. Cálculo de totales por contador:
+       - TOTAL IN = (CONTADOR IN FINAL - CONTADOR IN INICIAL) × DENOMINACION
+       - TOTAL OUT = (CONTADOR OUT FINAL - CONTADOR OUT INICIAL) × DENOMINACION
+       - TOTAL JACKPOT = (CONTADOR JACKPOT FINAL - CONTADOR JACKPOT INICIAL) × DENOMINACION
+       - TOTAL BILLETERO = (CONTADOR BILLETERO FINAL - CONTADOR BILLETERO INICIAL) × DENOMINACION
+    5. Cálculo de la utilidad final:
+       - UTILIDAD = TOTAL IN - (TOTAL OUT + TOTAL JACKPOT)
+    
+    - **machine_id**: ID de la máquina
+    - **period_start**: Fecha inicial (YYYY-MM-DD)
+    - **period_end**: Fecha final (YYYY-MM-DD)
+    - **locked**: Si True, marca el balance como bloqueado (opcional)
+    
+    Retorna el balance generado con todos los totales calculados.
+    """
+    try:
+        # Llamar a la función de dominio para calcular el cuadre
+        result = calcular_cuadre_maquina(
+            machine_id=data.machine_id,
+            period_start=data.period_start,
+            period_end=data.period_end,
+            counters_repo=repo_counters,
+            machines_repo=repo_machines,
+            balances_repo=repo_balances,
+            clock=get_current_time,
+            actor="api_user",  # TODO: obtener del usuario autenticado
+            persist=True,
+            lock=data.locked or False
+        )
+        
+        # Preparar respuesta (sin incluir los datos adicionales de contador_inicial/final)
+        response_data = {
+            'id': result.get('id'),
+            'machine_id': result['machine_id'],
+            'period_start': result['period_start'],
+            'period_end': result['period_end'],
+            'in_total': result['in_total'],
+            'out_total': result['out_total'],
+            'jackpot_total': result['jackpot_total'],
+            'billetero_total': result['billetero_total'],
+            'utilidad_total': result['utilidad_total'],
+            'generated_at': result['generated_at'],
+            'generated_by': result['generated_by'],
+            'locked': result['locked']
+        }
+        
+        return MachineBalanceOut(**response_data)
+        
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except LockedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el cuadre: {str(e)}"
+        )
+
 
 @router.get(
     "/machines",
@@ -337,6 +424,51 @@ def obtener_cuadre_maquina(
         )
     
     return MachineBalanceOut(**balance)
+
+
+@router.post(
+    "/machines/{balance_id}/lock",
+    status_code=status.HTTP_200_OK,
+    summary="Bloquear cuadre de máquina",
+    description="Marca un cuadre de máquina como bloqueado para evitar modificaciones"
+)
+def bloquear_cuadre_maquina(
+    balance_id: int = Path(..., ge=1, description="ID del balance a bloquear")
+):
+    """
+    Bloquea un cuadre de máquina para evitar recálculos o modificaciones.
+    
+    - **balance_id**: ID del balance a bloquear
+    """
+    # Verificar que existe
+    balance = repo_balances.obtener_machine_balance_por_id(balance_id)
+    if not balance:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Balance con id {balance_id} no encontrado"
+        )
+    
+    # Verificar si ya está bloqueado
+    if balance.get('locked'):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"El balance {balance_id} ya está bloqueado"
+        )
+    
+    # Bloquear
+    success = repo_balances.lock_machine_balance(
+        balance_id=balance_id,
+        actor="api_user",  # TODO: obtener del usuario autenticado
+        clock=get_current_time
+    )
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se pudo bloquear el balance"
+        )
+    
+    return {"locked": True, "id": balance_id, "message": "Balance bloqueado exitosamente"}
 
 
 # ============ ENDPOINTS PARA EXPORTACIÓN DE REPORTES ============

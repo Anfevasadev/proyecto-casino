@@ -3,11 +3,12 @@
 # Propósito:
 #   - Generar reportes consolidados detallados de casinos con desglose
 #     por máquina y categorías de contadores.
+#   - Usa el mismo cálculo del módulo por máquina (con denominación).
 # -------------------------------------------
 
 from typing import Dict, Any, List, Callable
 from datetime import datetime
-from collections import defaultdict
+from back.domain.balances.machine_balance import calcular_cuadre_maquina
 
 
 class NotFoundError(Exception):
@@ -28,6 +29,11 @@ def generar_reporte_consolidado_casino(
     """
     Genera un reporte consolidado detallado del casino con desglose por máquina.
     
+    IMPORTANTE: Aplica el mismo cálculo del módulo por máquina a cada máquina:
+    - Para cada máquina: TOTAL = (CONTADOR_FINAL - CONTADOR_INICIAL) × DENOMINACION
+    - Genera un listado detallado de todas las máquinas y sus resultados
+    - Consolida los totales por categoría (IN, OUT, JACKPOT, BILLETERO)
+    
     Args:
         place_id: ID del casino
         period_start: Fecha inicial del periodo (YYYY-MM-DD)
@@ -40,9 +46,10 @@ def generar_reporte_consolidado_casino(
         
     Returns:
         Dict con el reporte detallado incluyendo:
-        - Desglose por máquina
+        - Desglose por máquina (con contadores inicial/final)
         - Totales por categoría
         - Utilidad final calculada
+        - Información del casino
         
     Raises:
         NotFoundError: Si el casino no existe o está inactivo
@@ -71,64 +78,30 @@ def generar_reporte_consolidado_casino(
     # 3. Obtener todas las máquinas activas del casino
     machines = machines_repo.listar(only_active=True, casino_id=place_id)
     
-    # 4. Obtener todos los contadores del periodo
-    counters = counters_repo.list_by_casino_date(
-        casino_id=place_id,
-        fecha_inicio=period_start,
-        fecha_fin=period_end + " 23:59:59"
-    )
+    if not machines:
+        # Si no hay máquinas, retornar reporte vacío
+        return {
+            'casino_id': place_id,
+            'casino_nombre': place.get('nombre'),
+            'period_start': period_start,
+            'period_end': period_end,
+            'machines_summary': [],
+            'category_totals': {
+                'in_total': 0.0,
+                'out_total': 0.0,
+                'jackpot_total': 0.0,
+                'billetero_total': 0.0,
+                'utilidad_final': 0.0
+            },
+            'total_machines': 0,
+            'machines_processed': 0,
+            'machines_with_data': 0,
+            'machines_without_data': 0,
+            'generated_at': clock().strftime("%Y-%m-%d %H:%M:%S"),
+            'generated_by': actor
+        }
     
-    # 5. Crear un mapa de máquinas para acceso rápido
-    machines_map = {int(m['id']): m for m in machines}
-    
-    # 6. Agrupar contadores por máquina y calcular totales
-    machine_data = defaultdict(lambda: {
-        'counter_count': 0,
-        'in_total': 0.0,
-        'out_total': 0.0,
-        'jackpot_total': 0.0,
-        'billetero_total': 0.0
-    })
-    
-    total_counters = 0
-    
-    for counter in counters:
-        try:
-            machine_id = int(counter.get('machine_id', 0))
-            
-            # Solo procesar contadores de máquinas activas
-            if machine_id not in machines_map:
-                continue
-            
-            machine_data[machine_id]['counter_count'] += 1
-            total_counters += 1
-            
-            # Sumar valores
-            try:
-                machine_data[machine_id]['in_total'] += float(counter.get('in_amount', 0) or 0)
-            except (ValueError, TypeError):
-                pass
-            
-            try:
-                machine_data[machine_id]['out_total'] += float(counter.get('out_amount', 0) or 0)
-            except (ValueError, TypeError):
-                pass
-            
-            try:
-                machine_data[machine_id]['jackpot_total'] += float(counter.get('jackpot_amount', 0) or 0)
-            except (ValueError, TypeError):
-                pass
-            
-            try:
-                machine_data[machine_id]['billetero_total'] += float(counter.get('billetero_amount', 0) or 0)
-            except (ValueError, TypeError):
-                pass
-                
-        except (ValueError, TypeError):
-            continue
-    
-    # 7. Crear resumen por máquina
-    machines_summary = []
+    # 4. Inicializar totales por categoría
     category_totals = {
         'in_total': 0.0,
         'out_total': 0.0,
@@ -136,49 +109,133 @@ def generar_reporte_consolidado_casino(
         'billetero_total': 0.0
     }
     
-    for machine_id, data in machine_data.items():
-        machine_info = machines_map.get(machine_id, {})
-        
-        # Calcular utilidad de la máquina
-        utilidad = data['in_total'] - (data['out_total'] + data['jackpot_total'])
-        
-        machine_summary = {
-            'machine_id': machine_id,
-            'machine_marca': machine_info.get('marca'),
-            'machine_modelo': machine_info.get('modelo'),
-            'machine_serial': machine_info.get('serial'),
-            'machine_asset': machine_info.get('asset'),
-            'counter_count': data['counter_count'],
-            'in_total': round(data['in_total'], 2),
-            'out_total': round(data['out_total'], 2),
-            'jackpot_total': round(data['jackpot_total'], 2),
-            'billetero_total': round(data['billetero_total'], 2),
-            'utilidad': round(utilidad, 2)
-        }
-        
-        machines_summary.append(machine_summary)
-        
-        # Acumular en totales por categoría
-        category_totals['in_total'] += data['in_total']
-        category_totals['out_total'] += data['out_total']
-        category_totals['jackpot_total'] += data['jackpot_total']
-        category_totals['billetero_total'] += data['billetero_total']
+    # Lista para el desglose por máquina
+    machines_summary: List[Dict[str, Any]] = []
+    machines_processed = 0
+    machines_with_data = 0
+    machines_without_data = 0
     
-    # 8. Calcular utilidad final global
+    # 5. APLICAR EL MISMO CÁLCULO DEL MÓDULO POR MÁQUINA A CADA MÁQUINA
+    for machine in machines:
+        machine_id = int(machine['id'])
+        machines_processed += 1
+        
+        try:
+            # Calcular el cuadre de esta máquina individual
+            # usando la misma lógica: (CONTADOR_FINAL - CONTADOR_INICIAL) × DENOMINACION
+            machine_balance = calcular_cuadre_maquina(
+                machine_id=machine_id,
+                period_start=period_start,
+                period_end=period_end,
+                counters_repo=counters_repo,
+                machines_repo=machines_repo,
+                balances_repo=None,  # No necesitamos balances_repo para el reporte
+                clock=clock,
+                actor=actor,
+                persist=False,  # No persistir en el reporte
+                lock=False
+            )
+            
+            # Sumar a los totales por categoría
+            category_totals['in_total'] += machine_balance['in_total']
+            category_totals['out_total'] += machine_balance['out_total']
+            category_totals['jackpot_total'] += machine_balance['jackpot_total']
+            category_totals['billetero_total'] += machine_balance['billetero_total']
+            
+            # Agregar al resumen de máquinas con información detallada
+            machines_summary.append({
+                'machine_id': machine_id,
+                'machine_marca': machine.get('marca'),
+                'machine_modelo': machine.get('modelo'),
+                'machine_serial': machine.get('serial'),
+                'machine_asset': machine.get('asset'),
+                'denominacion': machine_balance['denominacion'],
+                
+                # Contadores iniciales
+                'contador_inicial': machine_balance.get('contador_inicial', {}),
+                
+                # Contadores finales
+                'contador_final': machine_balance.get('contador_final', {}),
+                
+                # Totales calculados
+                'in_total': machine_balance['in_total'],
+                'out_total': machine_balance['out_total'],
+                'jackpot_total': machine_balance['jackpot_total'],
+                'billetero_total': machine_balance['billetero_total'],
+                'utilidad': machine_balance['utilidad_total'],
+                
+                # Estado
+                'has_data': True
+            })
+            
+            machines_with_data += 1
+            
+        except ValueError as e:
+            # Máquina sin contadores en el periodo
+            machines_summary.append({
+                'machine_id': machine_id,
+                'machine_marca': machine.get('marca'),
+                'machine_modelo': machine.get('modelo'),
+                'machine_serial': machine.get('serial'),
+                'machine_asset': machine.get('asset'),
+                'denominacion': 0.0,
+                'contador_inicial': None,
+                'contador_final': None,
+                'in_total': 0.0,
+                'out_total': 0.0,
+                'jackpot_total': 0.0,
+                'billetero_total': 0.0,
+                'utilidad': 0.0,
+                'has_data': False,
+                'error': str(e)
+            })
+            
+            machines_without_data += 1
+            continue
+            
+        except Exception as e:
+            # Error inesperado
+            machines_summary.append({
+                'machine_id': machine_id,
+                'machine_marca': machine.get('marca'),
+                'machine_modelo': machine.get('modelo'),
+                'machine_serial': machine.get('serial'),
+                'machine_asset': machine.get('asset'),
+                'denominacion': 0.0,
+                'contador_inicial': None,
+                'contador_final': None,
+                'in_total': 0.0,
+                'out_total': 0.0,
+                'jackpot_total': 0.0,
+                'billetero_total': 0.0,
+                'utilidad': 0.0,
+                'has_data': False,
+                'error': f"Error inesperado: {str(e)}"
+            })
+            
+            machines_without_data += 1
+            continue
+    
+    # 6. Calcular utilidad final global
+    # UTILIDAD = IN - (OUT + JACKPOT)
     utilidad_final = category_totals['in_total'] - (
         category_totals['out_total'] + category_totals['jackpot_total']
     )
     
-    # 9. Ordenar máquinas por ID para consistencia
+    # 7. Ordenar máquinas por ID para consistencia
     machines_summary.sort(key=lambda x: x['machine_id'])
     
-    # 10. Construir el reporte completo
+    # 8. Construir el reporte completo
     report = {
         'casino_id': place_id,
         'casino_nombre': place.get('nombre'),
         'period_start': period_start,
         'period_end': period_end,
+        
+        # Desglose detallado por máquina
         'machines_summary': machines_summary,
+        
+        # Totales consolidados por categoría
         'category_totals': {
             'in_total': round(category_totals['in_total'], 2),
             'out_total': round(category_totals['out_total'], 2),
@@ -186,8 +243,14 @@ def generar_reporte_consolidado_casino(
             'billetero_total': round(category_totals['billetero_total'], 2),
             'utilidad_final': round(utilidad_final, 2)
         },
-        'total_machines': len(machines_summary),
-        'total_counters': total_counters,
+        
+        # Estadísticas
+        'total_machines': len(machines),
+        'machines_processed': machines_processed,
+        'machines_with_data': machines_with_data,
+        'machines_without_data': machines_without_data,
+        
+        # Metadatos
         'generated_at': clock().strftime("%Y-%m-%d %H:%M:%S"),
         'generated_by': actor
     }

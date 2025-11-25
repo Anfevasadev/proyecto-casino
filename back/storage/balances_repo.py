@@ -133,6 +133,54 @@ class BalancesRepo:
         df.to_csv(MACHINE_BALANCES_CSV, index=False)
         return True
     
+    def get_machine_balance_by_period(
+        self,
+        machine_id: int,
+        period_start: str,
+        period_end: str
+    ) -> Optional[Dict[str, Any]]:
+        """Obtiene un balance de máquina por periodo"""
+        df = pd.read_csv(MACHINE_BALANCES_CSV, dtype=str)
+        
+        if df.empty:
+            return None
+        
+        rows = df[
+            (df['machine_id'] == str(machine_id)) &
+            (df['period_start'] == period_start) &
+            (df['period_end'] == period_end)
+        ]
+        
+        if rows.empty:
+            return None
+        
+        return self._normalize_machine_balance(rows.iloc[0].to_dict())
+    
+    def update_machine_balance(self, balance_id: int, cambios: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Actualiza un balance de máquina existente"""
+        df = pd.read_csv(MACHINE_BALANCES_CSV, dtype=str)
+        
+        idx = df.index[df['id'] == str(balance_id)]
+        
+        if len(idx) == 0:
+            return None
+        
+        i = idx[0]
+        
+        # Actualizar campos permitidos
+        allowed_fields = [
+            'in_total', 'out_total', 'jackpot_total', 'billetero_total',
+            'utilidad_total', 'generated_at', 'generated_by', 'locked'
+        ]
+        
+        for field, value in cambios.items():
+            if field in allowed_fields:
+                df.at[i, field] = str(value)
+        
+        df.to_csv(MACHINE_BALANCES_CSV, index=False)
+        
+        return self.obtener_machine_balance_por_id(balance_id)
+    
     def _next_machine_balance_id(self) -> int:
         """Calcula el siguiente ID para machine_balances"""
         df = pd.read_csv(MACHINE_BALANCES_CSV, dtype=str)

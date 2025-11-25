@@ -134,19 +134,38 @@ class CasinoBalanceOut(BaseModel):
 
 # ============ MODELOS PARA REPORTES DETALLADOS ============
 
+class CounterSnapshot(BaseModel):
+    """Snapshot de contadores en un momento específico"""
+    at: Optional[str] = None
+    in_amount: float = 0.0
+    out_amount: float = 0.0
+    jackpot_amount: float = 0.0
+    billetero_amount: float = 0.0
+
+
 class MachineCounterSummary(BaseModel):
-    """Resumen de contadores por máquina"""
+    """Resumen de contadores por máquina con información detallada"""
     machine_id: int
     machine_marca: Optional[str] = None
     machine_modelo: Optional[str] = None
     machine_serial: Optional[str] = None
     machine_asset: Optional[str] = None
-    counter_count: int  # Cantidad de registros de contadores
+    denominacion: float = 0.0
+    
+    # Contadores inicial y final (opcionales)
+    contador_inicial: Optional[CounterSnapshot] = None
+    contador_final: Optional[CounterSnapshot] = None
+    
+    # Totales calculados
     in_total: float
     out_total: float
     jackpot_total: float
     billetero_total: float
     utilidad: float  # IN - (OUT + JACKPOT)
+    
+    # Estado
+    has_data: bool = True
+    error: Optional[str] = None
 
 
 class CategoryTotals(BaseModel):
@@ -166,8 +185,10 @@ class CasinoDetailedReport(BaseModel):
     period_end: str
     machines_summary: List[MachineCounterSummary]  # Desglose por máquina
     category_totals: CategoryTotals  # Totales consolidados
-    total_machines: int  # Cantidad de máquinas incluidas
-    total_counters: int  # Cantidad total de registros procesados
+    total_machines: int  # Cantidad total de máquinas del casino
+    machines_processed: int  # Máquinas procesadas
+    machines_with_data: int  # Máquinas con datos en el periodo
+    machines_without_data: int  # Máquinas sin datos en el periodo
     generated_at: str
     generated_by: str
 

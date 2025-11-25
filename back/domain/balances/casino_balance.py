@@ -3,10 +3,12 @@
 # Propósito:
 #   - Calcular el cuadre consolidado de un casino (place) sumando los valores
 #     de todas las máquinas activas en un periodo de fechas específico.
+#   - Usa el mismo cálculo del módulo por máquina para cada máquina del casino.
 # -------------------------------------------
 
-from typing import Dict, Any, Callable
+from typing import Dict, Any, Callable, List
 from datetime import datetime
+from back.domain.balances.machine_balance import calcular_cuadre_maquina
 
 
 class NotFoundError(Exception):
@@ -35,6 +37,10 @@ def calcular_cuadre_casino(
     """
     Calcula el cuadre general del casino consolidando todas sus máquinas.
     
+    IMPORTANTE: Aplica el mismo cálculo del módulo por máquina a cada máquina:
+    - Para cada máquina: TOTAL = (CONTADOR_FINAL - CONTADOR_INICIAL) × DENOMINACION
+    - Luego suma los resultados de todas las máquinas
+    
     Args:
         place_id: ID del casino
         period_start: Fecha inicial del periodo (YYYY-MM-DD)
@@ -49,7 +55,10 @@ def calcular_cuadre_casino(
         lock: Si True, marca como bloqueado
         
     Returns:
-        Dict con los totales consolidados del casino
+        Dict con los totales consolidados del casino incluyendo:
+        - Totales agregados (in_total, out_total, jackpot_total, billetero_total)
+        - Utilidad total del casino
+        - Desglose por máquina (machines_details)
         
     Raises:
         NotFoundError: Si el casino no existe o está inactivo
@@ -108,7 +117,9 @@ def calcular_cuadre_casino(
             'utilidad_total': 0.0,
             'generated_at': clock().strftime("%Y-%m-%d %H:%M:%S"),
             'generated_by': actor,
-            'locked': lock
+            'locked': lock,
+            'machines_details': [],
+            'total_machines': 0
         }
         
         if persist:
@@ -116,57 +127,103 @@ def calcular_cuadre_casino(
         
         return result
     
-    # 5. Obtener machine_ids
-    machine_ids = [int(m['id']) for m in machines]
-    
-    # 6. Inicializar totales
+    # 5. Inicializar totales consolidados
     in_total = 0.0
     out_total = 0.0
     jackpot_total = 0.0
     billetero_total = 0.0
     
-    # 7. Para cada máquina, obtener sus contadores en el periodo
-    for machine_id in machine_ids:
-        # Obtener contadores de esta máquina en el rango de fechas
-        # Usamos list_by_casino_date que filtra por casino y fechas
-        counters = counters_repo.list_by_casino_date(
-            casino_id=place_id,
-            fecha_inicio=period_start,
-            fecha_fin=period_end + " 23:59:59"  # Incluir todo el día final
-        )
-        
-        # Filtrar solo los de esta máquina específica
-        machine_counters = [
-            c for c in counters 
-            if str(c.get('machine_id', '')).strip() == str(machine_id)
-        ]
-        
-        # Sumar los valores de los contadores
-        for counter in machine_counters:
-            try:
-                in_total += float(counter.get('in_amount', 0) or 0)
-            except (ValueError, TypeError):
-                pass
-            
-            try:
-                out_total += float(counter.get('out_amount', 0) or 0)
-            except (ValueError, TypeError):
-                pass
-            
-            try:
-                jackpot_total += float(counter.get('jackpot_amount', 0) or 0)
-            except (ValueError, TypeError):
-                pass
-            
-            try:
-                billetero_total += float(counter.get('billetero_amount', 0) or 0)
-            except (ValueError, TypeError):
-                pass
+    # Lista para almacenar el desglose por máquina
+    machines_details: List[Dict[str, Any]] = []
+    machines_processed = 0
+    machines_with_errors = 0
     
-    # 8. Calcular utilidad total
+    # 6. APLICAR EL MISMO CÁLCULO DEL MÓDULO POR MÁQUINA A CADA MÁQUINA
+    for machine in machines:
+        machine_id = int(machine['id'])
+        
+        try:
+            # Calcular el cuadre de esta máquina individual
+            # usando la misma lógica: (CONTADOR_FINAL - CONTADOR_INICIAL) × DENOMINACION
+            machine_balance = calcular_cuadre_maquina(
+                machine_id=machine_id,
+                period_start=period_start,
+                period_end=period_end,
+                counters_repo=counters_repo,
+                machines_repo=machines_repo,
+                balances_repo=balances_repo,
+                clock=clock,
+                actor=actor,
+                persist=False,  # No persistir balances individuales, solo el consolidado
+                lock=False
+            )
+            
+            # Sumar a los totales consolidados del casino
+            in_total += machine_balance['in_total']
+            out_total += machine_balance['out_total']
+            jackpot_total += machine_balance['jackpot_total']
+            billetero_total += machine_balance['billetero_total']
+            
+            # Agregar desglose de esta máquina
+            machines_details.append({
+                'machine_id': machine_id,
+                'machine_marca': machine.get('marca'),
+                'machine_modelo': machine.get('modelo'),
+                'machine_serial': machine.get('serial'),
+                'machine_asset': machine.get('asset'),
+                'denominacion': machine_balance['denominacion'],
+                'in_total': machine_balance['in_total'],
+                'out_total': machine_balance['out_total'],
+                'jackpot_total': machine_balance['jackpot_total'],
+                'billetero_total': machine_balance['billetero_total'],
+                'utilidad': machine_balance['utilidad_total']
+            })
+            
+            machines_processed += 1
+            
+        except ValueError as e:
+            # Máquina sin contadores en el periodo - no es error crítico
+            machines_details.append({
+                'machine_id': machine_id,
+                'machine_marca': machine.get('marca'),
+                'machine_modelo': machine.get('modelo'),
+                'machine_serial': machine.get('serial'),
+                'machine_asset': machine.get('asset'),
+                'denominacion': 0.0,
+                'in_total': 0.0,
+                'out_total': 0.0,
+                'jackpot_total': 0.0,
+                'billetero_total': 0.0,
+                'utilidad': 0.0,
+                'error': str(e)
+            })
+            machines_with_errors += 1
+            continue
+            
+        except Exception as e:
+            # Error inesperado en esta máquina
+            machines_details.append({
+                'machine_id': machine_id,
+                'machine_marca': machine.get('marca'),
+                'machine_modelo': machine.get('modelo'),
+                'machine_serial': machine.get('serial'),
+                'machine_asset': machine.get('asset'),
+                'denominacion': 0.0,
+                'in_total': 0.0,
+                'out_total': 0.0,
+                'jackpot_total': 0.0,
+                'billetero_total': 0.0,
+                'utilidad': 0.0,
+                'error': f"Error inesperado: {str(e)}"
+            })
+            machines_with_errors += 1
+            continue
+    
+    # 7. Calcular utilidad total del casino
+    # UTILIDAD = IN - (OUT + JACKPOT)
     utilidad_total = in_total - (out_total + jackpot_total)
     
-    # 9. Preparar resultado
+    # 8. Preparar resultado consolidado
     result = {
         'place_id': place_id,
         'period_start': period_start,
@@ -178,22 +235,43 @@ def calcular_cuadre_casino(
         'utilidad_total': round(utilidad_total, 2),
         'generated_at': clock().strftime("%Y-%m-%d %H:%M:%S"),
         'generated_by': actor,
-        'locked': lock
+        'locked': lock,
+        'machines_details': machines_details,
+        'total_machines': len(machines),
+        'machines_processed': machines_processed,
+        'machines_with_errors': machines_with_errors
     }
     
-    # 10. Persistir si se solicita
+    # 9. Persistir si se solicita (solo totales, no desglose)
     if persist:
         # Verificar si ya existe un balance para este periodo
         existing = balances_repo.get_casino_balance_by_period(
             place_id, period_start, period_end
         )
         
+        # Preparar datos para persistencia (sin machines_details)
+        persist_data = {
+            'place_id': place_id,
+            'period_start': period_start,
+            'period_end': period_end,
+            'in_total': result['in_total'],
+            'out_total': result['out_total'],
+            'jackpot_total': result['jackpot_total'],
+            'billetero_total': result['billetero_total'],
+            'utilidad_total': result['utilidad_total'],
+            'generated_at': result['generated_at'],
+            'generated_by': result['generated_by'],
+            'locked': lock
+        }
+        
         if existing:
             # Actualizar el existente
+            persist_data['id'] = existing['id']
+            balances_repo.update_casino_balance(existing['id'], persist_data)
             result['id'] = existing['id']
-            balances_repo.update_casino_balance(existing['id'], result)
         else:
             # Insertar nuevo
-            balances_repo.insertar_casino_balance(result)
+            saved = balances_repo.insertar_casino_balance(persist_data)
+            result['id'] = saved['id']
     
     return result
