@@ -61,3 +61,20 @@
 #     generar el balance (domain valida y produce registro).
 #   - Validar formato de fechas y que los totales sean ≥ 0 (en Out normalmente ya vienen validados).
 # -------------------------------------------
+from pydantic import BaseModel
+from datetime import date, datetime
+
+
+class MachineBalance(BaseModel):
+    id: int
+    machine_id: int
+    period_start: date
+    period_end: date
+    in_total: float
+    out_total: float
+    jackpot_total: float
+    billetero_total: float
+    utilidad_total: float
+    generated_at: datetime
+    generated_by: str
+    locked: bool = False

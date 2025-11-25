@@ -29,3 +29,39 @@
 #   - Este repo NO valida efectos colaterales (como bloquear creación de máquinas);
 #     eso va en domain.
 # -------------------------------------------
+# back/storage/places_repo.py
+
+import json
+from pathlib import Path
+
+
+class PlaceStorage:
+    def __init__(self, filename="places.json"):
+        self.file = Path(filename)
+        if not self.file.exists():
+            self.file.write_text("[]")
+
+    def _read(self):
+        return json.loads(self.file.read_text())
+
+    def _write(self, data):
+        self.file.write_text(json.dumps(data, indent=4))
+
+    def list_places(self):
+        return self._read()
+
+    def get_place(self, place_id: int):
+        places = self._read()
+        for p in places:
+            if p["id"] == place_id:
+                return p
+        return None
+
+    # Compatibilidad con nombres en castellano usados por la capa `domain`
+    def obtener_por_id(self, place_id: int):
+        """Alias en español para `get_place` usado por algunos módulos del dominio."""
+        return self.get_place(place_id)
+
+    # Alias adicional por si se usa `obtener_por_id` con distinto nombre
+    def obtener(self, place_id: int):
+        return self.get_place(place_id)

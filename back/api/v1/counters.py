@@ -1,6 +1,8 @@
 from datetime import datetime, date
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query, Path, status
+from fastapi import APIRouter, Body
+
 
 from back.models.counters import CounterIn, CounterOut, CounterOutWithMachine, MachineSimple, CounterUpdateBatch
 
@@ -10,7 +12,7 @@ from back.domain.counters.read import consultar_contadores_reporte
 
 from back.storage.counters_repo import CountersRepo
 from back.storage.machines_repo import MachinesRepo
-from back.storage.place_repo import PlaceStorage
+from back.storage.places_repo import PlaceStorage
 
 
 # Instancia de repo para máquinas (coherente con otros routers)

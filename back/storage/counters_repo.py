@@ -1,307 +1,301 @@
-# Implementación de helper para counters usando pandas.
-import pandas as pd
-from pathlib import Path
-from typing import Optional, List, Dict, Any
+import csv
+import os
+from datetime import datetime
+from typing import List, Dict, Any, Optional
 
-CSV_PATH = Path("data/counters.csv")
+from .machines_repo import MachinesRepo
 
-EXPECTED_COLUMNS = [
-	"id",
-	"machine_id",
-	"casino_id",
-	"at",
-	"in_amount",
-	"out_amount",
-	"jackpot_amount",
-	"billetero_amount",
-	"created_at",
-	"created_by",
-	"updated_at",
-	"updated_by",
-]
 
 class CountersRepo:
+    """Repositorio de contadores basado en CSV (`data/counters.csv`).
 
-	def __init__(self):
+    Implementa la API utilizada por `domain` y `api`:
+      - next_id()
+      - insert_counter(row: dict)
+      - list_counters(machine_id=None, date_from=None, date_to=None, limit=100, offset=0, sort_by='at', ascending=True)
+      - get_by_id(id)
+      - list_by_casino_date(casino_id, fecha_inicio, fecha_fin)
+      - update_batch(casino_id, fecha_filtro, updates, actor, timestamp)
+    """
+
+    FIELDNAMES = [
+        "id",
+        "machine_id",
+        "at",
+        "in_amount",
+        "out_amount",
+        "jackpot_amount",
+        "billetero_amount",
+        "created_at",
+        "created_by",
+        "updated_at",
+        "updated_by",
+    ]
+
+    def __init__(self, filepath: Optional[str] = None):
+        base_dir = os.path.dirname(__file__)
+        if filepath:
+            self.filepath = filepath
+        else:
+            self.filepath = os.path.abspath(os.path.join(base_dir, "..", "..", "data", "counters.csv"))
+
         self._ensure_file()
+        self._load()
+        # Para operaciones que requieren conocer casino_id de una máquina
+        self.machines_repo = MachinesRepo()
 
     def _ensure_file(self):
-        """Crea el CSV con las columnas si no existe."""
-        if not CSV_PATH.exists():
-            # Crear directorio si no existe
-            DATA_DIR.mkdir(parents=True, exist_ok=True)
-            df = pd.DataFrame(columns=EXPECTED_COLUMNS)
-            df.to_csv(CSV_PATH, index=False)
+        if not os.path.exists(self.filepath):
+            os.makedirs(os.path.dirname(self.filepath), exist_ok=True)
+            with open(self.filepath, "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(self.FIELDNAMES)
+
+    def _load(self):
+        with open(self.filepath, newline="") as f:
+            reader = csv.DictReader(f)
+            self.data: List[Dict[str, str]] = list(reader)
+
+    def _save(self):
+        if not self.data:
+            # Ensure header exists
+            with open(self.filepath, "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(self.FIELDNAMES)
+            return
+
+        with open(self.filepath, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=self.FIELDNAMES)
+            writer.writeheader()
+            writer.writerows(self.data)
+
+    def next_id(self) -> int:
+        if not self.data:
+            return 1
+        return max(int(r["id"]) for r in self.data) + 1
+
+    def insert_counter(self, row: Dict[str, Any]) -> Dict[str, Any]:
+        # Normalizar y asignar id si falta
+        if row.get("id") is None:
+            row_id = self.next_id()
         else:
-            # Si existe, aseguramos que tenga la columna casino_id (migración simple)
-            df = pd.read_csv(CSV_PATH)
-            if "casino_id" not in df.columns:
-                df["casino_id"] = "" 
-                df.to_csv(CSV_PATH, index=False)
+            row_id = int(row.get("id"))
 
-	def _read_df(self) -> pd.DataFrame:
-		"""
-		Leer el CSV y asegurar que tenga las columnas esperadas.
-		Como estudiante: si no existe, devolvemos un DataFrame vacío con columnas.
-		"""
-		if CSV_PATH.exists():
-			df = pd.read_csv(CSV_PATH, dtype =str)
-		else:
-			df = pd.DataFrame(columns=EXPECTED_COLUMNS)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Asegurar campos básicos
+        stored = {
+            "id": str(row_id),
+            "machine_id": str(int(row.get("machine_id"))),
+            "at": str(row.get("at")),
+            "in_amount": str(float(row.get("in_amount", 0.0))),
+            "out_amount": str(float(row.get("out_amount", 0.0))),
+            "jackpot_amount": str(float(row.get("jackpot_amount", 0.0))),
+            "billetero_amount": str(float(row.get("billetero_amount", 0.0))),
+            "created_at": row.get("created_at", now),
+            "created_by": row.get("created_by", "system"),
+            "updated_at": row.get("updated_at", now),
+            "updated_by": row.get("updated_by", "system"),
+        }
 
-		# Asegurar que todas las columnas esperadas existan en el DataFrame
-		for col in EXPECTED_COLUMNS:
-			if col not in df.columns:
-				df[col] = None
-		return df[EXPECTED_COLUMNS]
+        self.data.append(stored)
+        self._save()
 
+        # Devolver con tipos más cómodos (int/float) para capas superiores
+        return {
+            "id": int(stored["id"]),
+            "machine_id": int(stored["machine_id"]),
+            "at": stored["at"],
+            "in_amount": float(stored["in_amount"]),
+            "out_amount": float(stored["out_amount"]),
+            "jackpot_amount": float(stored["jackpot_amount"]),
+            "billetero_amount": float(stored["billetero_amount"]),
+            "created_at": stored["created_at"],
+            "created_by": stored["created_by"],
+            "updated_at": stored["updated_at"],
+            "updated_by": stored["updated_by"],
+        }
 
-	def _write_df(self, df: pd.DataFrame) -> None:
-		"""
-		Escribir DataFrame al CSV respetando el orden de columnas.
-		"""
-		df.to_csv(CSV_PATH, index=False)
-
-
-	def next_id(self) -> int:
-		"""Calcular el próximo id disponible (secuencial)."""
-		df = self._read_df()
-		if df.empty:
-			return 1
-		ids = [int(x) for x in df["id"].dropna().tolist() if str(x).strip() != ""]
-		return (max(ids) + 1) if ids else 1
-
-
-	def get_by_id(self, counter_id: int) -> Optional[Dict[str, Any]]:
-		"""Obtener fila por id. Normaliza tipos básicos al retornar."""
-		df = self._read_df()
-		# Convertimos columna ID a numérico para comparar
-		df["id_num"] = pd.to_numeric(df["id"], errors='coerce')
-
-		rows = df[df["id"] == counter_id]
-
-		if rows.empty:
-			return None
-
-		row = rows.iloc[0].to_dict()
-
-		# Limpieza de temporales
-        if "id_num" in row: del row["id_num"]
-
-		# Normalizar tipos simples
-		try:
-            row["id"] = int(float(row["id"]))
-        except: row["id"] = None
-            
-        try:
-            row["machine_id"] = int(float(row["machine_id"]))
-        except: row["machine_id"] = None
-
-        for f in ["in_amount", "out_amount", "jackpot_amount", "billetero_amount"]:
+    def get_by_id(self, counter_id: int) -> Optional[Dict[str, Any]]:
+        for r in self.data:
             try:
-                val = row.get(f)
-                row[f] = float(val) if val is not None and str(val).strip() != "" else 0.0
-            except:
-                row[f] = 0.0
+                if int(r["id"]) == counter_id:
+                    return {
+                        "id": int(r["id"]),
+                        "machine_id": int(r["machine_id"]),
+                        "at": r["at"],
+                        "in_amount": float(r["in_amount"]),
+                        "out_amount": float(r["out_amount"]),
+                        "jackpot_amount": float(r["jackpot_amount"]),
+                        "billetero_amount": float(r["billetero_amount"]),
+                        "created_at": r.get("created_at"),
+                        "created_by": r.get("created_by"),
+                        "updated_at": r.get("updated_at"),
+                        "updated_by": r.get("updated_by"),
+                    }
+            except Exception:
+                continue
+        return None
 
-		try:
-            row["casino_id"] = int(float(row.get("casino_id", 0)))
-        except: row["casino_id"] = None
-
-        return row
-
-
-	def list_counters(
-		self,
-		machine_id: Optional[int] = None,
-		date_from: Optional[str] = None,
-		date_to: Optional[str] = None,
-		limit: Optional[int] = 100,
-		offset: int = 0,
-		sort_by: str = "at",
-		ascending: bool = True,
-	) -> List[Dict[str, Any]]:
-		"""
-		Listar contadores con filtros simples.
-
-		Notas didácticas:
-		- Usamos comparaciones de strings para fechas porque el formato
-		es 'YYYY-MM-DD HH:MM:SS' (orden lexicográfico coincide con orden cronológico).
-		- Se aplica paginación con `limit` y `offset`.
-		"""
-		df = self._read_df()
-
-		if machine_id is not None:
-			df = df[df["machine_id"] == machine_id]
-
-		if date_from is not None:
-			df = df[df["at"] >= date_from]
-
-		if date_to is not None:
-			df = df[df["at"] <= date_to]
-
-		# Ordenar según preferencia
-		if sort_by not in ["at", "id"]:
-			sort_by = "at"
-		df = df.sort_values(by=sort_by, ascending=ascending)
-
-		if limit is not None:
-			df = df.iloc[offset : offset + limit]
-		else:
-			df = df.iloc[offset:]
-
-		results: List[Dict[str, Any]] = []
-		for _, r in df.iterrows():
-			row = r.to_dict()
-			# Normalizar tipos sencillos
-			try:
-				row["id"] = int(row.get("id")) if str(row.get("id", "")).strip() else None
-			except Exception:
-				row["id"] = None
-			try:
-				row["machine_id"] = int(row.get("machine_id")) if str(row.get("machine_id", "")).strip() else None
-			except Exception:
-				row["machine_id"] = None
-			for f in ["in_amount", "out_amount", "jackpot_amount", "billetero_amount"]:
-				try:
-					row[f] = float(row.get(f)) if row.get(f) is not None and str(row.get(f)).strip() != "" else 0.0
-				except Exception:
-					row[f] = 0.0
-			results.append(row)
-		return results
-
-
-	def insert_counter(self, row: Dict[str, Any]) -> Dict[str, Any]:
-		"""
-		Insertar un registro nuevo en el CSV. `row` debe contener las columnas
-		esperadas (al menos las públicas). Retorna la fila insertada.
-		"""
-		df = self._read_df()
-		# Asegurar que el id exista y sea único
-		if "id" not in row or row["id"] is None:
-			row["id"] = self.next_id()
-
-		# Asegurar columnas faltantes en el row
-        for col in EXPECTED_COLUMNS:
-            if col not in row:
-                row[col] = None
-
-		# Convertir a DataFrame temporal y concatenar
-		df = pd.concat([df, pd.DataFrame([row])], ignore_index=True, sort=False)
-		# Escribir asegurando el orden de columnas
-		df = df.reindex(columns=EXPECTED_COLUMNS)
-		self._write_df(df)
-		return self.get_by_id(int(row["id"]))
-
-
-	def update_counter(self, counter_id: int, cambios: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-		"""
-		Actualiza columnas permitidas de un registro existente.
-		Retorna la fila actualizada o None si no existe.
-		"""
-		df = self._read_df()
-		idx = df.index[df["id"] == counter_id]
-		if len(idx) == 0:
-			return None
-		i = idx[0]
-
-		allowed = {"at", "in_amount", "out_amount", "jackpot_amount", "billetero_amount", "machine_id", "updated_at", "updated_by"}
-		for k, v in cambios.items():
-			if k in allowed:
-				df.at[i, k] = str(v)
-
-		self._write_df(df)
-		return self.get_by_id(counter_id)
-
-	def update_batch(self, casino_id: int, fecha_filtro: str, updates: List[Dict], actor: str, timestamp: datetime) -> List[Dict]:
-        """
-        Actualiza múltiples registros filtrando por Casino y Fecha (YYYY-MM-DD).
-        """
-        df = self._read_df()
-        if df.empty:
-            return []
-
-        now_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        updated_records = []
-        
-        # Mapa de actualizaciones
-        updates_map = {int(u['machine_id']): u for u in updates}
-        machines_to_update = updates_map.keys()
-
-        # Iterar
-        for idx, row in df.iterrows():
-            
-            # 1. Validar Casino
+    def list_counters(
+        self,
+        machine_id: Optional[int] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0,
+        sort_by: str = "at",
+        ascending: bool = True,
+    ) -> List[Dict[str, Any]]:
+        rows = []
+        for r in self.data:
             try:
-                row_casino = int(float(row['casino_id']))
-            except (ValueError, TypeError):
+                row = {
+                    "id": int(r["id"]),
+                    "machine_id": int(r["machine_id"]),
+                    "at": r["at"],
+                    "in_amount": float(r["in_amount"]),
+                    "out_amount": float(r["out_amount"]),
+                    "jackpot_amount": float(r["jackpot_amount"]),
+                    "billetero_amount": float(r["billetero_amount"]),
+                }
+            except Exception:
                 continue
 
-            if row_casino != casino_id:
+            if machine_id is not None and row["machine_id"] != machine_id:
                 continue
 
-            # 2. Validar Fecha
-            row_at = str(row['at'])
-            if len(row_at) >= 10:
-                row_date = row_at[:10]
-            else:
-                continue
-
-            if row_date != fecha_filtro:
-                continue
-
-            # 3. Validar Máquina
-            try:
-                m_id = int(float(row['machine_id']))
-            except (ValueError, TypeError):
-                continue
-
-            if m_id in machines_to_update:
-                cambios = updates_map[m_id]
-                
-                # Aplicar cambios
-                if cambios.get('in_amount') is not None: 
-                    df.at[idx, 'in_amount'] = str(cambios['in_amount'])
-                if cambios.get('out_amount') is not None: 
-                    df.at[idx, 'out_amount'] = str(cambios['out_amount'])
-                if cambios.get('jackpot_amount') is not None: 
-                    df.at[idx, 'jackpot_amount'] = str(cambios['jackpot_amount'])
-                if cambios.get('billetero_amount') is not None: 
-                    df.at[idx, 'billetero_amount'] = str(cambios['billetero_amount'])
-                
-                # Auditoría
-                df.at[idx, 'updated_at'] = now_str
-                df.at[idx, 'updated_by'] = actor
-                
-                # Agregar a resultados
-                res_row = df.loc[idx].to_dict()
-                # Normalizar para retorno
-                res_row['machine_id'] = m_id
-                res_row['casino_id'] = row_casino
-                updated_records.append(res_row)
-
-        if updated_records:
-            self._write_df(df)
-
-        return updated_records
-
-	# -------------- METODO PARA EL MOUDLO DE REPORTES ---------------
-
-    def list_by_casino_date(self, casino_id: int, fecha_inicio: str, fecha_fin: str) -> List[Dict]:
-        """Filtra registros por casino y rango de fechas."""
-        df = self._read_df()
-        results = []
-        
-        for _, row in df.iterrows():
-            try:
-                if int(float(row['casino_id'])) != casino_id:
+            # Filtrado por fecha (acepta 'YYYY-MM-DD' o 'YYYY-MM-DD HH:MM:SS')
+            if date_from:
+                try:
+                    if not row["at"].startswith(date_from):
+                        # If date_from includes time, check full compare
+                        if row["at"] < date_from:
+                            continue
+                except Exception:
                     continue
-            except: continue
-            
-            row_at = str(row['at'])
-            if len(row_at) >= 10:
-                row_date = row_at[:10]
-                if fecha_inicio <= row_date <= fecha_fin:
-                    results.append(row.fillna("").to_dict())
-                    
-        return results
+
+            if date_to:
+                try:
+                    if not row["at"].startswith(date_to):
+                        if row["at"] > date_to + " 23:59:59":
+                            continue
+                except Exception:
+                    continue
+
+            rows.append(row)
+
+        # Ordenamiento
+        def keyfn(x):
+            if sort_by in ("in_amount", "out_amount", "jackpot_amount", "billetero_amount"):
+                return x.get(sort_by, 0.0)
+            if sort_by == "id":
+                return x.get("id", 0)
+            # por defecto 'at'
+            return x.get("at", "")
+
+        rows.sort(key=keyfn, reverse=not ascending)
+
+        # Paginación
+        return rows[offset : offset + limit]
+
+    def list_by_casino_date(self, casino_id: int, fecha_inicio: str, fecha_fin: str) -> List[Dict[str, Any]]:
+        # Convertir strings 'YYYY-MM-DD' y filtrar registros que pertenecen
+        # a máquinas cuyo casino_id coincida.
+        resultado = []
+        for r in self.data:
+            try:
+                mid = int(r["machine_id"])
+            except Exception:
+                continue
+            m = self.machines_repo.get_by_id(mid)
+            if not m:
+                continue
+            # machines_repo stores casino_id as field 'casino_id' or 'casino_id'
+            try:
+                m_casino = int(m.get("casino_id") or m.get("casino") or 0)
+            except Exception:
+                m_casino = 0
+            if m_casino != casino_id:
+                continue
+
+            # comparar la porción fecha 'YYYY-MM-DD'
+            at = r.get("at", "")
+            if not at:
+                continue
+            at_date = at.split(" ")[0]
+            if fecha_inicio <= at_date <= fecha_fin:
+                resultado.append({
+                    "id": int(r["id"]),
+                    "machine_id": int(r["machine_id"]),
+                    "casino_id": m_casino,
+                    "at": r["at"],
+                    "in_amount": float(r["in_amount"]),
+                    "out_amount": float(r["out_amount"]),
+                    "jackpot_amount": float(r["jackpot_amount"]),
+                    "billetero_amount": float(r["billetero_amount"]),
+                })
+
+        return resultado
+
+    def update_batch(self, casino_id: int, fecha_filtro: str, updates: List[Dict[str, Any]], actor: str, timestamp: str) -> List[Dict[str, Any]]:
+        """Aplica una lista de actualizaciones para máquinas de un casino en una fecha dada.
+
+        `updates` es una lista de dicts que incluyen al menos `machine_id` y los campos a modificar.
+        Retorna la lista de filas actualizadas (ya convertidas a tipos correctos).
+        """
+        updated = []
+        # Para cada update, localizar filas que coincidan con machine_id y fecha
+        for u in updates:
+            try:
+                target_mid = int(u.get("machine_id"))
+            except Exception:
+                continue
+
+            # Verificar que la máquina pertenece al casino
+            m = self.machines_repo.get_by_id(target_mid)
+            if not m:
+                continue
+            try:
+                m_casino = int(m.get("casino_id") or 0)
+            except Exception:
+                m_casino = 0
+            if m_casino != casino_id:
+                continue
+
+            # buscar filas con misma máquina y misma fecha (porción YYYY-MM-DD)
+            for idx, row in enumerate(self.data):
+                try:
+                    if int(row.get("machine_id")) != target_mid:
+                        continue
+                    at = row.get("at", "")
+                    if not at.startswith(fecha_filtro):
+                        continue
+                except Exception:
+                    continue
+
+                # aplicar cambios solo de los campos existentes en update
+                changed = False
+                for field in ("at", "in_amount", "out_amount", "jackpot_amount", "billetero_amount"):
+                    if field in u:
+                        self.data[idx][field] = str(u[field])
+                        changed = True
+
+                if changed:
+                    self.data[idx]["updated_at"] = timestamp
+                    self.data[idx]["updated_by"] = actor
+                    # construir salida con tipos convertidos
+                    updated.append({
+                        "id": int(self.data[idx]["id"]),
+                        "machine_id": int(self.data[idx]["machine_id"]),
+                        "at": self.data[idx]["at"],
+                        "in_amount": float(self.data[idx]["in_amount"]),
+                        "out_amount": float(self.data[idx]["out_amount"]),
+                        "jackpot_amount": float(self.data[idx]["jackpot_amount"]),
+                        "billetero_amount": float(self.data[idx]["billetero_amount"]),
+                    })
+
+        if updated:
+            self._save()
+
+        return updated
+
