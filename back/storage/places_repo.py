@@ -246,6 +246,11 @@ class PlaceStorage:
             return None
 
         return row.iloc[0].to_dict()
+    
+    @staticmethod
+    def get_by_id(place_id: int) -> dict | None:
+        """Alias para obtener_por_id (compatibilidad con módulo de balances)"""
+        return PlaceStorage.obtener_por_id(place_id)
 
     @staticmethod
     def actualizar_place(place_id: int, cambios: dict, actor: str = "system") -> dict:

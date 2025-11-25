@@ -61,3 +61,113 @@
 #     generar el balance (domain valida y produce registro).
 #   - Validar formato de fechas y que los totales sean ≥ 0 (en Out normalmente ya vienen validados).
 # -------------------------------------------
+
+from pydantic import BaseModel, Field, validator
+from typing import Optional, List
+
+
+# ============ MODELOS PARA MACHINE BALANCES ============
+
+class MachineBalanceIn(BaseModel):
+    """Modelo de entrada para generar un balance de máquina"""
+    machine_id: int = Field(..., ge=1, description="ID de la máquina")
+    period_start: str = Field(..., description="Fecha inicial del periodo (YYYY-MM-DD)")
+    period_end: str = Field(..., description="Fecha final del periodo (YYYY-MM-DD)")
+    locked: Optional[bool] = Field(False, description="Si True, el balance se marcará como bloqueado")
+    
+    @validator('period_end')
+    def validate_period(cls, v, values):
+        """Valida que period_end sea mayor o igual a period_start"""
+        if 'period_start' in values and v < values['period_start']:
+            raise ValueError('La fecha final debe ser mayor o igual a la fecha inicial')
+        return v
+
+
+class MachineBalanceOut(BaseModel):
+    """Modelo de salida para un balance de máquina"""
+    id: int
+    machine_id: int
+    period_start: str
+    period_end: str
+    in_total: float = Field(..., ge=0)
+    out_total: float = Field(..., ge=0)
+    jackpot_total: float = Field(..., ge=0)
+    billetero_total: float = Field(..., ge=0)
+    utilidad_total: float
+    generated_at: str
+    generated_by: str
+    locked: bool
+
+
+# ============ MODELOS PARA CASINO BALANCES ============
+
+class CasinoBalanceIn(BaseModel):
+    """Modelo de entrada para generar un balance de casino"""
+    place_id: int = Field(..., ge=1, description="ID del casino")
+    period_start: str = Field(..., description="Fecha inicial del periodo (YYYY-MM-DD)")
+    period_end: str = Field(..., description="Fecha final del periodo (YYYY-MM-DD)")
+    locked: Optional[bool] = Field(False, description="Si True, el balance se marcará como bloqueado")
+    
+    @validator('period_end')
+    def validate_period(cls, v, values):
+        """Valida que period_end sea mayor o igual a period_start"""
+        if 'period_start' in values and v < values['period_start']:
+            raise ValueError('La fecha final debe ser mayor o igual a la fecha inicial')
+        return v
+
+
+class CasinoBalanceOut(BaseModel):
+    """Modelo de salida para un balance de casino"""
+    id: int
+    place_id: int
+    period_start: str
+    period_end: str
+    in_total: float = Field(..., ge=0)
+    out_total: float = Field(..., ge=0)
+    jackpot_total: float = Field(..., ge=0)
+    billetero_total: float = Field(..., ge=0)
+    utilidad_total: float
+    generated_at: str
+    generated_by: str
+    locked: bool
+
+
+# ============ MODELOS PARA REPORTES DETALLADOS ============
+
+class MachineCounterSummary(BaseModel):
+    """Resumen de contadores por máquina"""
+    machine_id: int
+    machine_marca: Optional[str] = None
+    machine_modelo: Optional[str] = None
+    machine_serial: Optional[str] = None
+    machine_asset: Optional[str] = None
+    counter_count: int  # Cantidad de registros de contadores
+    in_total: float
+    out_total: float
+    jackpot_total: float
+    billetero_total: float
+    utilidad: float  # IN - (OUT + JACKPOT)
+
+
+class CategoryTotals(BaseModel):
+    """Totales agregados por categoría"""
+    in_total: float
+    out_total: float
+    jackpot_total: float
+    billetero_total: float
+    utilidad_final: float  # IN - (OUT + JACKPOT)
+
+
+class CasinoDetailedReport(BaseModel):
+    """Reporte consolidado detallado de un casino"""
+    casino_id: int
+    casino_nombre: Optional[str] = None
+    period_start: str
+    period_end: str
+    machines_summary: List[MachineCounterSummary]  # Desglose por máquina
+    category_totals: CategoryTotals  # Totales consolidados
+    total_machines: int  # Cantidad de máquinas incluidas
+    total_counters: int  # Cantidad total de registros procesados
+    generated_at: str
+    generated_by: str
+
