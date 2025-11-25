@@ -29,6 +29,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 
 import LoginPage from './pages/Login'
 import CasinosPage from './pages/Casinos'
+import CasinoMachinesPage from './pages/CasinoMachines'
+import ProfilePage from './pages/Profile'
 
 export default function App() {
   return (
@@ -40,6 +42,10 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         {/* Lista de casinos; ahora visible */}
         <Route path="/casinos" element={<CasinosPage />} />
+        {/* Máquinas de un casino específico */}
+        <Route path="/casinos/:casinoId/machines" element={<CasinoMachinesPage />} />
+        {/* Perfil de usuario */}
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </Router>
   )

@@ -17,6 +17,7 @@
 
 // TODO: Implementar el componente CasinoCard según las instrucciones anteriores.
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Este componente representa una única tarjeta de casino.
@@ -27,46 +28,203 @@ import React from 'react';
  * @param {string} casino.name - Nombre del casino.
  * @param {string} casino.city - Ciudad donde se encuentra.
  * @param {string} casino.description - Descripción corta.
+ * @param {function} onEdit - Función para editar el casino.
  */
-export default function CasinoCard({ casino = {} }) { // FIX: Se añade = {} para evitar el TypeError si casino es undefined
-  const { name, city, description } = casino;
+export default function CasinoCard({ casino = {}, onEdit }) {
+  const { id, name, city, description } = casino;
+  const navigate = useNavigate();
 
-  // Si el componente se renderiza sin datos esenciales, podemos optar por no mostrar nada.
-  // if (!name) return null; 
+  // Generar un ícono basado en el ID del casino para consistencia
+  const getRandomIcon = (casinoId) => {
+    const icons = ['chips', 'dice', 'slot', 'cards', 'roulette', 'poker'];
+    const index = casinoId ? casinoId % icons.length : 0;
+    return icons[index];
+  };
+
+  // Iconos diferentes para cada casino
+  const getCasinoIcon = () => {
+    // Casinos predefinidos
+    if (name.includes('Golden')) {
+      return renderChipsAndCards();
+    } else if (name.includes('Red Dragon')) {
+      return renderDiceAndRoulette();
+    } else if (name.includes('Royal Fortune')) {
+      return renderSlotMachine();
+    } 
     
+    // Casinos nuevos - generar icono aleatorio basado en ID
+    const iconType = getRandomIcon(id);
+    
+    switch(iconType) {
+      case 'chips':
+        return renderChipsOnly();
+      case 'dice':
+        return renderDiceOnly();
+      case 'slot':
+        return renderSlotMachine();
+      case 'cards':
+        return renderCardsOnly();
+      case 'roulette':
+        return renderRouletteOnly();
+      case 'poker':
+        return renderPokerChips();
+      default:
+        return renderChipsAndCards();
+    }
+  };
+
+  const renderChipsAndCards = () => (
+    <div className="casino-icon-decorative">
+      <div className="casino-chips-stack">
+        <div className="chip chip-gold"></div>
+        <div className="chip chip-red"></div>
+        <div className="chip chip-black"></div>
+      </div>
+      <div className="casino-cards">
+        <div className="card card-1">♠</div>
+        <div className="card card-2">♥</div>
+        <div className="card card-3">♣</div>
+        <div className="card card-4">♦</div>
+      </div>
+    </div>
+  );
+
+  const renderDiceAndRoulette = () => (
+    <div className="casino-icon-decorative">
+      <div className="dice-container">
+        <div className="dice">
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+        </div>
+        <div className="dice dice-2">
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+        </div>
+      </div>
+      <div className="roulette-wheel"></div>
+    </div>
+  );
+
+  const renderSlotMachine = () => (
+    <div className="casino-icon-decorative">
+      <div className="slot-machine">
+        <div className="slot-reel">7</div>
+        <div className="slot-reel">7</div>
+        <div className="slot-reel">7</div>
+      </div>
+      <div className="crown-icon">👑</div>
+    </div>
+  );
+
+  const renderChipsOnly = () => (
+    <div className="casino-icon-decorative">
+      <div className="casino-chips-stack">
+        <div className="chip chip-blue"></div>
+        <div className="chip chip-green"></div>
+        <div className="chip chip-purple"></div>
+      </div>
+    </div>
+  );
+
+  const renderDiceOnly = () => (
+    <div className="casino-icon-decorative">
+      <div className="dice-container">
+        <div className="dice">
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+        </div>
+        <div className="dice dice-2">
+          <div className="dot"></div>
+        </div>
+        <div className="dice">
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCardsOnly = () => (
+    <div className="casino-icon-decorative">
+      <div className="casino-cards-large">
+        <div className="card-large card-1">A♠</div>
+        <div className="card-large card-2">K♥</div>
+        <div className="card-large card-3">Q♣</div>
+      </div>
+    </div>
+  );
+
+  const renderRouletteOnly = () => (
+    <div className="casino-icon-decorative">
+      <div className="roulette-wheel-large"></div>
+      <div className="roulette-ball"></div>
+    </div>
+  );
+
+  const renderPokerChips = () => (
+    <div className="casino-icon-decorative">
+      <div className="poker-chips-circle">
+        <div className="chip chip-gold"></div>
+        <div className="chip chip-red"></div>
+        <div className="chip chip-black"></div>
+        <div className="chip chip-blue"></div>
+        <div className="chip chip-green"></div>
+      </div>
+      <div className="poker-icon">🃏</div>
+    </div>
+  );
+
   return (
-    // Estilo de tarjeta con fondo Rojo Oscuro (bg-red-950) y borde Oro (border-yellow-500)
-    <div 
-      className="bg-[#1a0000] border-2 border-[#d4af37] rounded-xl shadow-lg 
-                 p-6 transform transition-transform duration-300 hover:scale-[1.03] 
-                 hover:shadow-[0_0_20px_rgba(244,208,63,0.7)] text-white"
-    >
-      {/* Encabezado con el nombre del casino en color Oro */}
-      <h3 className="text-2xl font-bold mb-2 text-[#f4d03f]">
+    <div className="casino-card">
+      {/* Icono decorativo de casino */}
+      {getCasinoIcon()}
+
+      {/* Nombre del casino */}
+      <h3 className="casino-card-title">
         {name}
       </h3>
       
-      {/* Ciudad/Ubicación en color Plata */}
-      <p className="text-[#c0c0c0] text-sm mb-4">
-        <svg className="w-4 h-4 inline mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"></path>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+      {/* Ciudad con icono */}
+      <p className="casino-card-city">
+        <svg className="location-pin" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
         </svg>
         {city}
       </p>
 
-      {/* Descripción corta del casino */}
-      <p className="text-gray-300 mb-6 italic">
+      {/* Descripción */}
+      <p className="casino-card-description">
         {description}
       </p>
 
-      {/* Botón de acción principal con estilo de Oro y fondo Rojo Oscuro */}
-      <button 
-        className="w-full bg-[#d4af37] text-black font-semibold py-2 rounded-lg 
-                   hover:bg-[#f4d03f] transition duration-200"
-      >
-        Ver Juegos
-      </button>
+      {/* Botones de acción */}
+      <div className="casino-card-actions">
+        <button 
+          className="casino-card-button"
+          onClick={() => navigate(`/casinos/${id}/machines`)}
+        >
+          Ver Juegos
+        </button>
+        {onEdit && (
+          <button 
+            className="casino-card-edit-btn"
+            onClick={() => onEdit(casino)}
+            title="Editar casino"
+          >
+            ✏️
+          </button>
+        )}
+      </div>
     </div>
   );
 }

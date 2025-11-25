@@ -28,7 +28,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import CasinoCard from "../components/CasinoCard";
-import "../index.css"; // Importa los estilos de casino
+import CreateCasinoForm from "../components/CreateCasinoForm";
+import EditCasinoForm from "../components/EditCasinoForm";
+import "../index.css";
 
 /*
  * Página de lista de casinos. Al montarse el componente, ejecuta
@@ -62,23 +64,37 @@ const MOCK_CASINOS = [
 export default function CasinosPage() {
   const [query, setQuery] = useState("");
   const [casinos, setCasinos] = useState([]);
-  const [loading, setLoading] = useState(true); // Carga inicial de casinos al montar el componente
+  const [allCasinos, setAllCasinos] = useState([...MOCK_CASINOS]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingCasino, setEditingCasino] = useState(null);
+
+  // Cargar casinos desde localStorage al iniciar
+  useEffect(() => {
+    const storedCasinos = localStorage.getItem('allCasinos');
+    if (storedCasinos) {
+      try {
+        const parsed = JSON.parse(storedCasinos);
+        setAllCasinos(parsed);
+      } catch (e) {
+        console.error('Error loading casinos from localStorage:', e);
+        setAllCasinos([...MOCK_CASINOS]);
+      }
+    } else {
+      // Si no hay casinos guardados, guardar los mock iniciales
+      localStorage.setItem('allCasinos', JSON.stringify(MOCK_CASINOS));
+    }
+  }, []);
 
   useEffect(() => {
     fetchCasinos();
-  }, []); // Función para recuperar casinos desde el backend (o simulación)
+  }, [allCasinos]);
 
   const fetchCasinos = async (name = "") => {
     setLoading(true);
     try {
-      // --- SIMULACIÓN DEL BACKEND ---
-      // Aquí iría el código real:
-      // const params = name ? { name } : {}
-      // const response = await axios.get('/api/v1/casinos', { params })
-      // setCasinos(response.data)
-
       // Simulación de filtro:
-      const filtered = MOCK_CASINOS.filter((c) =>
+      const filtered = allCasinos.filter((c) =>
         c.name.toLowerCase().includes(name.toLowerCase())
       );
       setCasinos(filtered);
@@ -87,12 +103,43 @@ export default function CasinosPage() {
     } finally {
       setLoading(false);
     }
-  }; // Actualiza el término de búsqueda y vuelve a consultar
+  };
 
   const handleSearch = (event) => {
     const value = event.target.value;
     setQuery(value);
     fetchCasinos(value);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
+
+  const handleCasinoCreated = (newCasino) => {
+    setAllCasinos(prev => {
+      const updated = [...prev, newCasino];
+      localStorage.setItem('allCasinos', JSON.stringify(updated));
+      return updated;
+    });
+    setShowCreateForm(false);
+    alert(`¡Casino "${newCasino.name}" creado exitosamente!`);
+  };
+
+  const handleEditCasino = (casino) => {
+    setEditingCasino(casino);
+  };
+
+  const handleCasinoUpdated = (updatedCasino) => {
+    setAllCasinos(prev => {
+      const updated = prev.map(casino => 
+        casino.id === updatedCasino.id ? updatedCasino : casino
+      );
+      localStorage.setItem('allCasinos', JSON.stringify(updated));
+      return updated;
+    });
+    setEditingCasino(null);
+    alert(`¡Casino "${updatedCasino.name}" actualizado exitosamente!`);
   };
 
   // Renderizado del componente
@@ -104,30 +151,54 @@ export default function CasinosPage() {
           <h2>Royal Fortune</h2>
         </div>
         <nav className="casino-nav">
-          <a href="#" className="nav-link">
+          <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); window.location.href = '/profile' }}>
             Mi Perfil
           </a>
           <a href="#" className="nav-link">
             Cajero
           </a>
-          <a href="/login" className="logout-btn">
+          <button onClick={handleLogout} className="logout-btn">
             Cerrar Sesión
-          </a>
+          </button>
         </nav>
       </header>
       <main className="casino-main">
-        <h1 className="section-title">Encuentra tu Casino Ideal</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+          <h1 className="section-title" style={{ 
+            fontSize: '2em', 
+            color: '#fff',
+            borderBottom: 'none',
+            margin: 0
+          }}>
+            Encuentra tu Casino Ideal
+          </h1>
+          <button 
+            onClick={() => setShowCreateForm(true)}
+            className="create-casino-btn"
+          >
+            + Crear Casino
+          </button>
+        </div>
 
         {/* Campo de búsqueda con estilos de casino */}
         <div className="max-w-xl mx-auto mb-10">
           <input
             type="text"
-            placeholder="Buscar por nombre (ej: Golden Ace)"
+            placeholder="Buscar por nombre (ej: Gold)"
             value={query}
             onChange={handleSearch}
-            // Usamos las clases de input del formulario de Login para mantener el estilo
-            className="login-form-input w-full p-3 border-2 border-yellow-700 rounded-lg 
-                               bg-gray-900 text-white focus:outline-none focus:border-yellow-500"
+            style={{
+              width: '100%',
+              padding: '12px 20px',
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              border: '2px solid #d4af37',
+              borderRadius: '8px',
+              color: '#fff',
+              fontSize: '1em',
+              outline: 'none'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#f4d03f'}
+            onBlur={(e) => e.target.style.borderColor = '#d4af37'}
           />
         </div>
 
@@ -142,11 +213,31 @@ export default function CasinosPage() {
         {/* SECCIÓN DESCOMENTADA Y ESTILADA: Lista de casinos */}
         <div className="grid-container">
           {casinos.map((casino) => (
-            <CasinoCard key={casino.id} casino={casino} />
+            <CasinoCard 
+              key={casino.id} 
+              casino={casino}
+              onEdit={handleEditCasino}
+            />
           ))}
         </div>
       </main>
-         {" "}
+
+      {/* Modal para crear casino */}
+      {showCreateForm && (
+        <CreateCasinoForm 
+          onCasinoCreated={handleCasinoCreated}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      )}
+
+      {/* Modal para editar casino */}
+      {editingCasino && (
+        <EditCasinoForm 
+          casino={editingCasino}
+          onCasinoUpdated={handleCasinoUpdated}
+          onCancel={() => setEditingCasino(null)}
+        />
+      )}
     </div>
   );
 }
