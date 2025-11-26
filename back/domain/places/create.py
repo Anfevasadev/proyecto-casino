@@ -59,6 +59,7 @@ class PlaceDomain:
                 nombre=place_data.nombre,
                 direccion=place_data.direccion,
                 codigo_casino=place_data.codigo_casino,
+                ciudad=place_data.ciudad,
                 created_by=created_by
             )
             

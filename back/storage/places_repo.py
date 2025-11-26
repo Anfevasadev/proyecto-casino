@@ -4,7 +4,7 @@
 #   - CRUD para data/places.csv.
 #
 # CSV (encabezado esperado):
-#   id,name,address,is_active,created_at,created_by,updated_at,updated_by
+#   id,nombre,direccion,codigo_casino,ciudad,estado,created_at,created_by,updated_at,updated_by
 #
 # Funciones sugeridas:
 #   1) listar(only_active: bool = True, limit: int | None = None, offset: int = 0) -> list[dict]
@@ -55,6 +55,7 @@ class PlaceStorage:
                 'nombre',
                 'direccion',
                 'codigo_casino',
+                'ciudad',
                 'estado',
                 'created_at',
                 'created_by',
@@ -79,6 +80,7 @@ class PlaceStorage:
         nombre: str,
         direccion: str,
         codigo_casino: str,
+        ciudad: str,
         created_by: str = "system"
     ) -> Dict:
         """
@@ -88,6 +90,7 @@ class PlaceStorage:
             nombre: Nombre del casino
             direccion: Dirección del casino
             codigo_casino: Código único del casino
+            ciudad: Ciudad donde se encuentra el casino
             created_by: Usuario que crea
             
         Returns:
@@ -118,6 +121,7 @@ class PlaceStorage:
             'nombre': nombre.strip(),
             'direccion': direccion.strip(),
             'codigo_casino': codigo_casino.upper(),
+            'ciudad': ciudad.strip(),
             'estado': True,
             'created_at': timestamp,
             'created_by': created_by,
@@ -271,7 +275,7 @@ class PlaceStorage:
         row_idx = df.index[df['id'].astype(int) == int(place_id)][0]
 
         # Aplicar sólo columnas conocidas para evitar escribir campos extraños
-        allowed = {'nombre', 'direccion', 'estado'}
+        allowed = {'nombre', 'direccion', 'ciudad', 'estado'}
         for k, v in cambios.items():
             if k in allowed:
                 df.at[row_idx, k] = v
@@ -350,7 +354,7 @@ class PlaceStorage:
         row_idx = df.index[df['id'].astype(int) == int(place_id)][0]
 
         # Aplicar cambios solo a columnas permitidas
-        allowed = {'nombre', 'direccion', 'estado'}
+        allowed = {'nombre', 'direccion', 'ciudad', 'estado'}
         for k, v in cambios.items():
             if k in allowed:
                 df.at[row_idx, k] = v

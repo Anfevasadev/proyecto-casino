@@ -58,6 +58,12 @@ class PlaceIn(BaseModel):
         max_length=20,
         description="Identificador único del casino"
     )
+    ciudad: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+        description="Ciudad donde se encuentra el casino"
+    )
 
     @field_validator('nombre')
     @classmethod
@@ -97,6 +103,15 @@ class PlaceIn(BaseModel):
         
         return v
 
+    @field_validator('ciudad')
+    @classmethod
+    def validate_ciudad(cls, v: str) -> str:
+        """Valida que la ciudad no esté vacía"""
+        v = v.strip()
+        if not v:
+            raise ValueError("La ciudad no puede estar vacía")
+        return v
+
 
 class PlaceOut(BaseModel):
     """
@@ -106,6 +121,7 @@ class PlaceOut(BaseModel):
     nombre: str
     direccion: str
     codigo_casino: str
+    ciudad: str
     estado: bool = True
     created_at: Optional[str] = None
     created_by: Optional[str] = None
@@ -131,6 +147,12 @@ class PlaceUpdate(BaseModel):
         None,
         description="Estado del casino (activo/inactivo)"
     )
+    ciudad: Optional[str] = Field(
+        None,
+        min_length=3,
+        max_length=100,
+        description="Ciudad donde se encuentra el casino"
+    )
 
     @field_validator('nombre')
     @classmethod
@@ -150,4 +172,15 @@ class PlaceUpdate(BaseModel):
         v = v.strip()
         if not v:
             raise ValueError("La dirección del casino no puede estar vacía")
+        return v
+
+    @field_validator('ciudad')
+    @classmethod
+    def validate_ciudad_update(cls, v: Optional[str]) -> Optional[str]:
+        """Valida que la ciudad no esté vacía si se proporciona"""
+        if v is None:
+            return v
+        v = v.strip()
+        if not v:
+            raise ValueError("La ciudad no puede estar vacía")
         return v

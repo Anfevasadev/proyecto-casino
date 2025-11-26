@@ -17,7 +17,10 @@ from back.models.balances import (
     CasinoBalanceOut,
     MachineBalanceIn,
     MachineBalanceOut,
-    CasinoDetailedReport
+    CasinoDetailedReport,
+    ReportFilters,
+    ParticipationReportIn,
+    ParticipationReportOut
 )
 
 from back.domain.balances.casino_balance import (
@@ -28,7 +31,11 @@ from back.domain.balances.casino_balance import (
 
 from back.domain.balances.machine_balance import calcular_cuadre_maquina
 
-from back.domain.balances.report import generar_reporte_consolidado_casino
+from back.domain.balances.report import (
+    generar_reporte_consolidado_casino,
+    generar_reporte_con_filtros,
+    generar_reporte_participacion
+)
 from back.domain.balances.export import generar_pdf_reporte, generar_excel_reporte
 
 from back.storage.balances_repo import BalancesRepo
@@ -617,3 +624,457 @@ def exportar_reporte_excel(
         )
 
 
+# ============ ENDPOINTS PARA REPORTES CON FILTROS AVANZADOS ============
+
+@router.get(
+    "/reportes/filtros",
+    status_code=status.HTTP_200_OK,
+    summary="Generar reporte con filtros avanzados",
+    description="Genera reportes personalizados con filtros por marca, modelo, ciudad y tipo de reporte"
+)
+def generar_reporte_filtros(
+    period_start: str = Query(..., description="Fecha inicial (YYYY-MM-DD)"),
+    period_end: str = Query(..., description="Fecha final (YYYY-MM-DD)"),
+    casino_id: Optional[int] = Query(None, ge=1, description="ID del casino (opcional)"),
+    marca: Optional[str] = Query(None, description="Marca de máquina (ej: IGT, Aristocrat)"),
+    modelo: Optional[str] = Query(None, description="Modelo de máquina (ej: Sphinx, Buffalo)"),
+    ciudad: Optional[str] = Query(None, description="Ciudad del casino"),
+    tipo_reporte: str = Query("detallado", description="Tipo: 'detallado', 'consolidado', 'resumen'")
+):
+    """
+    Genera reportes personalizados con filtros avanzados.
+    
+    **Filtros disponibles:**
+    - **casino_id**: Filtrar por un casino específico
+    - **marca**: Filtrar por marca de máquinas
+    - **modelo**: Filtrar por modelo de máquinas
+    - **ciudad**: Filtrar por ciudad (todos los casinos de esa ciudad)
+    
+    **Tipos de reporte:**
+    - **detallado**: Desglose completo por máquina con contadores inicial/final
+    - **consolidado**: Solo totales por categoría (IN, OUT, JACKPOT, BILLETERO)
+    - **resumen**: Solo estadísticas generales
+    
+    **Nota**: Si se especifica casino_id, se ignora el filtro de ciudad.
+    """
+    try:
+        report = generar_reporte_con_filtros(
+            period_start=period_start,
+            period_end=period_end,
+            counters_repo=repo_counters,
+            machines_repo=repo_machines,
+            places_repo=repo_places,
+            clock=get_current_time,
+            actor="api_user",  # TODO: obtener del usuario autenticado
+            casino_id=casino_id,
+            marca=marca,
+            modelo=modelo,
+            ciudad=ciudad,
+            tipo_reporte=tipo_reporte
+        )
+        
+        return report
+        
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el reporte: {str(e)}"
+        )
+
+
+@router.get(
+    "/reportes/filtros/pdf",
+    status_code=status.HTTP_200_OK,
+    summary="Exportar reporte filtrado a PDF",
+    description="Genera y descarga un reporte con filtros en formato PDF"
+)
+def exportar_reporte_filtros_pdf(
+    period_start: str = Query(..., description="Fecha inicial (YYYY-MM-DD)"),
+    period_end: str = Query(..., description="Fecha final (YYYY-MM-DD)"),
+    casino_id: Optional[int] = Query(None, ge=1, description="ID del casino (opcional)"),
+    marca: Optional[str] = Query(None, description="Marca de máquina"),
+    modelo: Optional[str] = Query(None, description="Modelo de máquina"),
+    ciudad: Optional[str] = Query(None, description="Ciudad del casino"),
+    tipo_reporte: str = Query("detallado", description="Tipo: 'detallado', 'consolidado', 'resumen'")
+):
+    """
+    Genera un archivo PDF del reporte con filtros aplicados.
+    
+    El PDF incluye:
+    - Filtros aplicados
+    - Información de casinos incluidos
+    - Tabla con desglose (si es detallado)
+    - Totales por categoría
+    - Utilidad final calculada
+    """
+    try:
+        # Generar el reporte
+        report = generar_reporte_con_filtros(
+            period_start=period_start,
+            period_end=period_end,
+            counters_repo=repo_counters,
+            machines_repo=repo_machines,
+            places_repo=repo_places,
+            clock=get_current_time,
+            actor="api_user",
+            casino_id=casino_id,
+            marca=marca,
+            modelo=modelo,
+            ciudad=ciudad,
+            tipo_reporte=tipo_reporte
+        )
+        
+        # Generar PDF
+        pdf_content = generar_pdf_reporte(report)
+        
+        # Nombre del archivo
+        filters_str = f"{'casino' + str(casino_id) if casino_id else ''}"
+        filters_str += f"{'_' + marca if marca else ''}"
+        filters_str += f"{'_' + modelo if modelo else ''}"
+        filters_str += f"{'_' + ciudad if ciudad else ''}"
+        if not filters_str:
+            filters_str = "general"
+        
+        filename = f"reporte_{tipo_reporte}_{filters_str}_{period_start}_{period_end}.pdf"
+        
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+        
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except ImportError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el PDF: {str(e)}"
+        )
+
+
+@router.get(
+    "/reportes/filtros/excel",
+    status_code=status.HTTP_200_OK,
+    summary="Exportar reporte filtrado a Excel",
+    description="Genera y descarga un reporte con filtros en formato Excel"
+)
+def exportar_reporte_filtros_excel(
+    period_start: str = Query(..., description="Fecha inicial (YYYY-MM-DD)"),
+    period_end: str = Query(..., description="Fecha final (YYYY-MM-DD)"),
+    casino_id: Optional[int] = Query(None, ge=1, description="ID del casino (opcional)"),
+    marca: Optional[str] = Query(None, description="Marca de máquina"),
+    modelo: Optional[str] = Query(None, description="Modelo de máquina"),
+    ciudad: Optional[str] = Query(None, description="Ciudad del casino"),
+    tipo_reporte: str = Query("detallado", description="Tipo: 'detallado', 'consolidado', 'resumen'")
+):
+    """
+    Genera un archivo Excel del reporte con filtros aplicados.
+    
+    El Excel incluye:
+    - Hoja de información general y filtros
+    - Hoja con desglose detallado (si aplica)
+    - Hoja con totales y estadísticas
+    - Formato profesional con colores y bordes
+    """
+    try:
+        # Generar el reporte
+        report = generar_reporte_con_filtros(
+            period_start=period_start,
+            period_end=period_end,
+            counters_repo=repo_counters,
+            machines_repo=repo_machines,
+            places_repo=repo_places,
+            clock=get_current_time,
+            actor="api_user",
+            casino_id=casino_id,
+            marca=marca,
+            modelo=modelo,
+            ciudad=ciudad,
+            tipo_reporte=tipo_reporte
+        )
+        
+        # Generar Excel
+        excel_content = generar_excel_reporte(report)
+        
+        # Nombre del archivo
+        filters_str = f"{'casino' + str(casino_id) if casino_id else ''}"
+        filters_str += f"{'_' + marca if marca else ''}"
+        filters_str += f"{'_' + modelo if modelo else ''}"
+        filters_str += f"{'_' + ciudad if ciudad else ''}"
+        if not filters_str:
+            filters_str = "general"
+        
+        filename = f"reporte_{tipo_reporte}_{filters_str}_{period_start}_{period_end}.xlsx"
+        
+        return Response(
+            content=excel_content,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+        
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except ImportError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el Excel: {str(e)}"
+        )
+
+
+
+
+# ============ ENDPOINTS PARA REPORTE POR PARTICIPACIÓN ============
+
+@router.post(
+    "/participacion",
+    response_model=ParticipationReportOut,
+    status_code=status.HTTP_200_OK,
+    summary="Generar reporte por participación",
+    description="Genera un reporte de participación para máquinas seleccionadas con un porcentaje específico"
+)
+def generar_reporte_participacion_endpoint(
+    report_data: ParticipationReportIn
+):
+    """
+    Genera un reporte por participación.
+    
+    Permite seleccionar un grupo de máquinas y calcular:
+    - **Utilidad Total**: Suma de utilidades de las máquinas seleccionadas
+    - **Valor de Participación**: `UTILIDAD TOTAL × (PORCENTAJE / 100)`
+    
+    **Ejemplo de cálculo:**
+    - Utilidad Total de 3 máquinas: $1,000,000
+    - Porcentaje de Participación: 30%
+    - Valor de Participación: $300,000
+    
+    **Desglose incluido:**
+    - Información de cada máquina
+    - Totales por categoría (IN, OUT, JACKPOT, BILLETERO)
+    - Utilidad individual de cada máquina
+    
+    **Body:**
+    ```json
+    {
+      "machine_ids": [1, 2, 3],
+      "period_start": "2025-01-01",
+      "period_end": "2025-01-31",
+      "porcentaje_participacion": 30.0
+    }
+    ```
+    """
+    try:
+        report = generar_reporte_participacion(
+            machine_ids=report_data.machine_ids,
+            period_start=report_data.period_start,
+            period_end=report_data.period_end,
+            porcentaje_participacion=report_data.porcentaje_participacion,
+            counters_repo=repo_counters,
+            machines_repo=repo_machines,
+            places_repo=repo_places,
+            clock=get_current_time,
+            actor="api_user"  # TODO: obtener del usuario autenticado
+        )
+        
+        return ParticipationReportOut(**report)
+        
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el reporte: {str(e)}"
+        )
+
+
+@router.post(
+    "/participacion/pdf",
+    status_code=status.HTTP_200_OK,
+    summary="Exportar reporte de participación a PDF",
+    description="Genera y descarga el reporte de participación en formato PDF"
+)
+def exportar_reporte_participacion_pdf(
+    report_data: ParticipationReportIn
+):
+    """
+    Genera un archivo PDF del reporte por participación.
+    
+    El PDF incluye:
+    - Información del periodo y porcentaje aplicado
+    - Tabla con desglose de máquinas seleccionadas
+    - Utilidad por máquina
+    - **Utilidad Total destacada**
+    - **Valor de Participación resaltado**
+    - Totales por categoría
+    
+    Formato profesional listo para presentación y auditorías.
+    """
+    try:
+        # Generar el reporte
+        report = generar_reporte_participacion(
+            machine_ids=report_data.machine_ids,
+            period_start=report_data.period_start,
+            period_end=report_data.period_end,
+            porcentaje_participacion=report_data.porcentaje_participacion,
+            counters_repo=repo_counters,
+            machines_repo=repo_machines,
+            places_repo=repo_places,
+            clock=get_current_time,
+            actor="api_user"
+        )
+        
+        # Generar PDF
+        pdf_content = generar_pdf_reporte(report)
+        
+        # Nombre del archivo
+        machines_str = f"{len(report_data.machine_ids)}_machines"
+        filename = f"reporte_participacion_{machines_str}_{report_data.period_start}_{report_data.period_end}.pdf"
+        
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+        
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except ImportError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el PDF: {str(e)}"
+        )
+
+
+@router.post(
+    "/participacion/excel",
+    status_code=status.HTTP_200_OK,
+    summary="Exportar reporte de participación a Excel",
+    description="Genera y descarga el reporte de participación en formato Excel"
+)
+def exportar_reporte_participacion_excel(
+    report_data: ParticipationReportIn
+):
+    """
+    Genera un archivo Excel del reporte por participación.
+    
+    El Excel incluye:
+    - Hoja 1: Información general y resumen
+    - Hoja 2: Desglose detallado por máquina
+    - Hoja 3: Cálculos de participación destacados
+    - **Utilidad Total**
+    - **Porcentaje de Participación**
+    - **Valor de Participación**
+    
+    Formato ideal para análisis adicional y presentaciones.
+    """
+    try:
+        # Generar el reporte
+        report = generar_reporte_participacion(
+            machine_ids=report_data.machine_ids,
+            period_start=report_data.period_start,
+            period_end=report_data.period_end,
+            porcentaje_participacion=report_data.porcentaje_participacion,
+            counters_repo=repo_counters,
+            machines_repo=repo_machines,
+            places_repo=repo_places,
+            clock=get_current_time,
+            actor="api_user"
+        )
+        
+        # Generar Excel
+        excel_content = generar_excel_reporte(report)
+        
+        # Nombre del archivo
+        machines_str = f"{len(report_data.machine_ids)}_machines"
+        filename = f"reporte_participacion_{machines_str}_{report_data.period_start}_{report_data.period_end}.xlsx"
+        
+        return Response(
+            content=excel_content,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+        
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except ImportError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el Excel: {str(e)}"
+        )
