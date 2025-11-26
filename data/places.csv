@@ -1,4 +1,6 @@
-id,nombre,direccion,codigo_casino,ciudad,estado,created_at,created_by,updated_at,updated_by
-1,CASINO_ITM,SI ALGUJN DIA,1,Sin especificar,True,2025-11-25 00:51:54,admin,2025-11-25 02:38:46,system
-2,castillo,CARRERANOSE-CALLENOSE,2,Sin especificar,True,2025-11-25 01:32:02,admin,,
-3,Las Vegas,stringstrifgfgh,1,Sin especificar,True,2025-11-26 04:13:16,Juan,,
+id,nombre,direccion,codigo_casino,estado,created_at,created_by,updated_at,updated_by
+1,CASINO_ITM,SI ALGUN DIA,1,True,2025-11-25 00:51:54,admin,2025-11-26 05:11:00,system
+2,castillo,CARRERANOSE-CALLENOSE,2,True,2025-11-25 01:32:02,admin,,
+3,Casino para borrar,Aquí estará el casino,CAS1,False,2025-11-26 05:30:59,system,2025-11-26 05:31:16,system
+4,Casino para borrar,sdsdsdsdsddssddsds,CAS2,False,2025-11-26 05:31:44,system,2025-11-26 05:32:16,system
+5,Casino para borrar,weweewewewewee,CAS3,True,2025-11-26 06:25:11,system,,

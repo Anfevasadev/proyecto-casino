@@ -145,6 +145,9 @@ export default function CasinoMachines() {
           <a href="#" onClick={(e) => { e.preventDefault(); window.location.href = '/profile' }}>
             Mi Perfil
           </a>
+          <a href="/counters">
+            Contadores
+          </a>
           <button onClick={handleLogout} className="logout-btn">
             Cerrar Sesión
           </button>

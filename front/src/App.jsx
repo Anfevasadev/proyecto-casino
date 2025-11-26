@@ -30,6 +30,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './pages/Login'
 import CasinosPage from './pages/Casinos'
 import CasinoMachinesPage from './pages/CasinoMachines'
+import CountersPage from './pages/Counters'
 import ProfilePage from './pages/Profile'
 
 export default function App() {
@@ -44,6 +45,8 @@ export default function App() {
         <Route path="/casinos" element={<CasinosPage />} />
         {/* Máquinas de un casino específico */}
         <Route path="/casinos/:casinoId/machines" element={<CasinoMachinesPage />} />
+        {/* Registro de contadores */}
+        <Route path="/counters" element={<CountersPage />} />
         {/* Perfil de usuario */}
         <Route path="/profile" element={<ProfilePage />} />
       </Routes>

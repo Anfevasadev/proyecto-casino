@@ -720,6 +720,94 @@ body {
     background: radial-gradient(circle, #44ff44, #008800);
 }
 
+/* --- Módulo de Contadores --- */
+.filters-panel {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--color-gold);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.filters-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.records-section {
+    margin-top: 40px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--color-gold);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.records-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.records-table-wrapper {
+    overflow-x: auto;
+}
+
+.records-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--color-white);
+}
+
+.records-table th,
+.records-table td {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    text-align: center;
+}
+
+.records-table th {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.table-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--color-gold);
+    border-radius: 6px;
+    padding: 6px;
+    color: var(--color-white);
+}
+
+.table-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.success-message {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid #10b981;
+    color: #10b981;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
 .chip-purple {
     background: radial-gradient(circle, #ff44ff, #880088);
 }

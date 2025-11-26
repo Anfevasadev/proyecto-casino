@@ -84,8 +84,8 @@ export default function CasinosPage() {
           <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); window.location.href = '/profile' }}>
             Mi Perfil
           </a>
-          <a href="#" className="nav-link">
-            Cajero
+          <a href="/counters" className="nav-link">
+            Contadores
           </a>
           <button onClick={handleLogout} className="logout-btn">
             Cerrar Sesión
