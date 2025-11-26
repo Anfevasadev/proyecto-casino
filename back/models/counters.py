@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 from typing import Optional, List
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 import re
 from datetime import date
 from decimal import Decimal
@@ -52,9 +52,9 @@ class CounterIn(BaseModel):
 	jackpot_amount: float = Field(0.0, ge=0.0)
 	billetero_amount: float = Field(0.0, ge=0.0)
 
-	@validator("at")
-	def _check_at_format(cls, v: Optional[str]):
-		# Si viene, verificar patrón básico. Si no viene, lo aceptamos (dominio puede setearlo).
+	@field_validator("at")
+	def _check_at_format_v2(cls, v: Optional[str]):
+		# Validador Pydantic v2 para el campo 'at'
 		if v is None:
 			return v
 		if not _validate_datetime_format(v):
@@ -80,8 +80,8 @@ class CounterUpdate(BaseModel):
 	jackpot_amount: Optional[float] = Field(None, ge=0.0)
 	billetero_amount: Optional[float] = Field(None, ge=0.0)
 
-	@validator("at")
-	def _check_at_format(cls, v: Optional[str]):
+	@field_validator("at")
+	def _check_at_format_v2_update(cls, v: Optional[str]):
 		if v is None:
 			return v
 		if not _validate_datetime_format(v):
@@ -111,8 +111,8 @@ class CounterOut(BaseModel):
 	jackpot_amount: float
 	billetero_amount: float
 
-	class Config:
-		schema_extra = {
+	model_config = ConfigDict(
+		json_schema_extra={
 			"example": {
 				"id": 1,
 				"machine_id": 10,
@@ -122,8 +122,9 @@ class CounterOut(BaseModel):
 				"out_amount": 800.0,
 				"jackpot_amount": 50.0,
 				"billetero_amount": 100.0,
-			}
+			},
 		}
+	)
 
 # Modelo enriquecido: incluye información mínima de la máquina vinculada.
 class MachineSimple(BaseModel):
