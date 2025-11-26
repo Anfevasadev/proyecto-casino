@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
+import client from '../api/client';
 
 export default function CreateCasinoForm({ onCasinoCreated, onCancel }) {
   const [formData, setFormData] = useState({
-    name: '',
-    city: '',
-    description: ''
+    nombre: '',
+    direccion: '',
+    codigo_casino: ''
   });
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -14,24 +16,40 @@ export default function CreateCasinoForm({ onCasinoCreated, onCancel }) {
     setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.city || !formData.description) {
-      setError('Por favor completa todos los campos');
+    const nombre = formData.nombre.trim();
+    const direccion = formData.direccion.trim();
+    const codigo = formData.codigo_casino.trim();
+
+    if (!nombre || !direccion || !codigo) {
+      setError('Todos los campos son obligatorios');
       return;
     }
 
-    // Crear nuevo casino con ID único
-    const newCasino = {
-      id: Date.now(),
-      name: formData.name,
-      city: formData.city,
-      description: formData.description
-    };
-
-    onCasinoCreated(newCasino);
-    setFormData({ name: '', city: '', description: '' });
+    setSubmitting(true);
+    try {
+      const payload = {
+        nombre,
+        direccion,
+        codigo_casino: codigo.toUpperCase()
+      };
+      await client.post('/places/casino', payload);
+      setFormData({ nombre: '', direccion: '', codigo_casino: '' });
+      onCasinoCreated?.();
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setError(detail.map(item => item.msg ?? JSON.stringify(item)).join(' | '));
+      } else if (typeof detail === 'string') {
+        setError(detail);
+      } else {
+        setError(err.message || 'No se pudo crear el casino');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -50,12 +68,12 @@ export default function CreateCasinoForm({ onCasinoCreated, onCancel }) {
           )}
 
           <div className="form-group">
-            <label htmlFor="name">Nombre del Casino</label>
+            <label htmlFor="nombre">Nombre del Casino</label>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={formData.name}
+              id="nombre"
+              name="nombre"
+              value={formData.nombre}
               onChange={handleChange}
               placeholder="Ej: Diamond Palace"
               className="form-input"
@@ -63,28 +81,28 @@ export default function CreateCasinoForm({ onCasinoCreated, onCancel }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="city">Ciudad</label>
-            <input
-              type="text"
-              id="city"
-              name="city"
-              value={formData.city}
+            <label htmlFor="direccion">Dirección</label>
+            <textarea
+              id="direccion"
+              name="direccion"
+              value={formData.direccion}
               onChange={handleChange}
-              placeholder="Ej: Monaco"
-              className="form-input"
+              placeholder="Dirección completa del establecimiento"
+              className="form-textarea"
+              rows="3"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="description">Descripción</label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
+            <label htmlFor="codigo_casino">Código Interno</label>
+            <input
+              type="text"
+              id="codigo_casino"
+              name="codigo_casino"
+              value={formData.codigo_casino}
               onChange={handleChange}
-              placeholder="Describe las características del casino..."
-              className="form-textarea"
-              rows="3"
+              placeholder="Ej: CAS-001"
+              className="form-input"
             />
           </div>
 
@@ -92,8 +110,8 @@ export default function CreateCasinoForm({ onCasinoCreated, onCancel }) {
             <button type="button" onClick={onCancel} className="btn-cancel">
               Cancelar
             </button>
-            <button type="submit" className="btn-submit">
-              Crear Casino
+            <button type="submit" className="btn-submit" disabled={submitting}>
+              {submitting ? 'Guardando...' : 'Crear Casino'}
             </button>
           </div>
         </form>

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
+import client from '../api/client';
 
 export default function EditCasinoForm({ casino, onCasinoUpdated, onCancel }) {
   const [formData, setFormData] = useState({
-    name: casino.name || '',
-    city: casino.city || '',
-    description: casino.description || ''
+    nombre: casino?.nombre || '',
+    direccion: casino?.direccion || '',
+    estado: casino?.estado ?? true
   });
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -14,24 +16,42 @@ export default function EditCasinoForm({ casino, onCasinoUpdated, onCancel }) {
     setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.city || !formData.description) {
-      setError('Por favor completa todos los campos');
+    const payload = {};
+    const trimmedNombre = formData.nombre.trim();
+    const trimmedDireccion = formData.direccion.trim();
+
+    if (!trimmedNombre || !trimmedDireccion) {
+      setError('Nombre y dirección son obligatorios');
       return;
     }
 
-    // Actualizar casino manteniendo el ID original
-    const updatedCasino = {
-      ...casino,
-      name: formData.name,
-      city: formData.city,
-      description: formData.description
-    };
+    if (trimmedNombre !== casino.nombre) {
+      payload.nombre = trimmedNombre;
+    }
+    if (trimmedDireccion !== casino.direccion) {
+      payload.direccion = trimmedDireccion;
+    }
+    if (formData.estado !== casino.estado) {
+      payload.estado = formData.estado;
+    }
 
-    onCasinoUpdated(updatedCasino);
-    setFormData({ name: '', city: '', description: '' });
+    if (Object.keys(payload).length === 0) {
+      setError('Realiza un cambio antes de guardar');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await client.put(`/places/casino/${casino.id}`, payload);
+      onCasinoUpdated?.();
+    } catch (err) {
+      setError(err.message || 'No se pudo actualizar el casino');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -50,50 +70,62 @@ export default function EditCasinoForm({ casino, onCasinoUpdated, onCancel }) {
           )}
 
           <div className="form-group">
-            <label htmlFor="name">Nombre del Casino</label>
+            <label htmlFor="nombre">Nombre del Casino</label>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={formData.name}
+              id="nombre"
+              name="nombre"
+              value={formData.nombre}
               onChange={handleChange}
-              placeholder="Ej: Diamond Palace"
               className="form-input"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="city">Ciudad</label>
-            <input
-              type="text"
-              id="city"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              placeholder="Ej: Monaco"
-              className="form-input"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="description">Descripción</label>
+            <label htmlFor="direccion">Dirección</label>
             <textarea
-              id="description"
-              name="description"
-              value={formData.description}
+              id="direccion"
+              name="direccion"
+              value={formData.direccion}
               onChange={handleChange}
-              placeholder="Describe las características del casino..."
               className="form-textarea"
               rows="3"
             />
+          </div>
+
+          <div className="form-group">
+            <label>Código de Casino</label>
+            <input
+              type="text"
+              value={casino.codigo_casino}
+              disabled
+              className="form-input disabled"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="estado">Estado</label>
+            <select
+              id="estado"
+              name="estado"
+              value={formData.estado ? 'activo' : 'inactivo'}
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                estado: e.target.value === 'activo'
+              }))}
+              className="form-input"
+            >
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
           </div>
 
           <div className="form-actions">
             <button type="button" onClick={onCancel} className="btn-cancel">
               Cancelar
             </button>
-            <button type="submit" className="btn-submit">
-              Guardar Cambios
+            <button type="submit" className="btn-submit" disabled={submitting}>
+              {submitting ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           </div>
         </form>
