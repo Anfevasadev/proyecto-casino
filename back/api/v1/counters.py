@@ -131,19 +131,25 @@ def post_counter(body: CounterIn):
 		if value is None:
 			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"El campo '{field}' es obligatorio.")
 
-	# Validar unicidad: no debe existir ya un registro para casino-fecha-máquina
-	at_fecha = body.at[:10] if body.at else _clock_local()[:10]
+	# Validar unicidad: no debe existir ya un registro para casino-fecha-hora-máquina exactos
+	# Permite múltiples contadores en el mismo día pero en diferentes horas
+	at_completo = body.at if body.at else _clock_local()
 	casino_id = body.casino_id
+	
+	# Buscar si existe un contador con la misma fecha-hora exacta
 	existentes = repo_counters.list_counters(
 		machine_id=body.machine_id,
-		date_from=at_fecha,
-		date_to=at_fecha,
-		limit=1
+		date_from=at_completo,
+		date_to=at_completo,
+		limit=10
 	)
 	for ex in existentes:
-		# Coincidencia exacta de casino, fecha y máquina
-		if str(ex.get("casino_id")) == str(casino_id) and str(ex.get("at", ""))[:10] == at_fecha:
-			raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ya existe un registro para esta máquina, casino y fecha.")
+		# Coincidencia exacta de casino, fecha-hora completa y máquina
+		if str(ex.get("casino_id")) == str(casino_id) and str(ex.get("at", "")) == at_completo:
+			raise HTTPException(
+				status_code=status.HTTP_409_CONFLICT, 
+				detail=f"Ya existe un registro para esta máquina en la fecha-hora {at_completo}. Use una hora diferente."
+			)
 
 	try:
 		created = create_counter(

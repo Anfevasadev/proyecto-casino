@@ -1,5 +1,2 @@
 id,place_id,period_start,period_end,in_total,out_total,jackpot_total,billetero_total,utilidad_total,generated_at,generated_by,locked
-1,1,2025-11-25,2025-11-25,703.0,200.0,138.0,10.0,365.0,2025-11-25 05:14:43,api_user,True
-2,2,2025-11-25,2025-11-25,0.0,0.0,0.0,0.0,0.0,2025-11-25 05:14:24,api_user,False
-3,3,2025-11-25,period_end,0.0,0.0,0.0,0.0,0.0,2025-11-25 05:18:48,api_user,False
-4,3,2025-11-01,2025-11-30,0.0,0.0,0.0,0.0,0.0,2025-11-25 05:36:15,api_user,False
+

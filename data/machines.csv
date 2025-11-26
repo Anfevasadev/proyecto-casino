@@ -1,5 +1,2 @@
-id,marca,modelo,serial,asset,denominacion,estado,casino_id,created_at,created_by,updated_at,updated_by,is_active
-1,x,y,1234,A001,Tragamonedas,True,1,2025-11-25 01:24:49,system,2025-11-25 01:24:49,system,True
-2,y,z,12345,A0011,Tragamonedas,True,1,2025-11-25 01:25:27,system,2025-11-25 01:55:13,admin,True
-3,RAZER,XYZ,2580,a007,Ruleta,True,2,2025-11-25 01:40:01,admin,2025-11-25 01:40:01,admin,True
-4,x,string,string,string,string,False,1,2025-11-25 02:38:56,system,2025-11-25 02:41:37,system,False
+id,marca,modelo,serial,asset,denominacion,estado,casino_id,created_at,created_by,updated_at,updated_by
+1,xxx,xxx1,0001,0123,5.0,True,3,2025-11-26 04:14:20,Juan,2025-11-26 04:14:20,Juan

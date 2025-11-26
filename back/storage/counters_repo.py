@@ -135,7 +135,8 @@ class CountersRepo:
         df = self._read_df()
 
         if machine_id is not None:
-            df = df[df["machine_id"] == machine_id]
+            # Convertir machine_id a string para comparar con CSV
+            df = df[df["machine_id"] == str(machine_id)]
 
         if date_from is not None:
             df = df[df["at"] >= date_from]

@@ -132,7 +132,7 @@ def registrar_maquina(machine: MachineIn, actor: str = "system"):
         "modelo": machine.modelo,
         "serial": machine.serial,
         "asset": machine.asset,
-        "denominacion": machine.denominacion,
+        "denominacion": str(machine.denominacion),
         "estado": str(machine.is_active),
         "casino_id": machine.place_id
     }
@@ -163,19 +163,24 @@ def listar_maquinas(
     if casino_id is not None:
         data = [m for m in data if str(m.get("casino_id")) == str(casino_id)]
 
-    return [
-        MachineOut(
+    result = []
+    for m in data:
+        try:
+            denominacion_val = float(m["denominacion"]) if m.get("denominacion") else 0.0
+        except (ValueError, TypeError):
+            denominacion_val = 0.0
+        
+        result.append(MachineOut(
             id=int(m["id"]),
             marca=m["marca"],
             modelo=m["modelo"],
             serial=m["serial"],
             asset=m["asset"],
-            denominacion=m["denominacion"],
+            denominacion=denominacion_val,
             estado=str(m.get("estado", "True")).lower() == "true",
             casino_id=int(m["casino_id"])
-        )
-        for m in data
-    ]
+        ))
+    return result
 
 
 @router.get("/{machine_id}", response_model=MachineOut)
@@ -184,13 +189,18 @@ def obtener_maquina(machine_id: int):
     if not m:
         raise HTTPException(status_code=404, detail="Machine not found")
 
+    try:
+        denominacion_val = float(m["denominacion"]) if m.get("denominacion") else 0.0
+    except (ValueError, TypeError):
+        denominacion_val = 0.0
+
     return MachineOut(
         id=int(m["id"]),
         marca=m["marca"],
         modelo=m["modelo"],
         serial=m["serial"],
         asset=m["asset"],
-        denominacion=m["denominacion"],
+        denominacion=denominacion_val,
         estado=str(m["estado"]).lower() == "true",
         casino_id=int(m["casino_id"])
     )
