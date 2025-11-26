@@ -171,6 +171,8 @@ A continuación se define cada archivo CSV, su propósito y significado de cada 
 # 3. Relaciones entre entidades
 
 ### Diagrama
+
+```mathematica
  ┌────────────┐        1 ──── N        ┌───────────────┐
  │  places    │────────────────────────▶│   machines    │
  └────────────┘                         └───────────────┘
@@ -188,16 +190,17 @@ A continuación se define cada archivo CSV, su propósito y significado de cada 
                                         ┌───────────────┐
                                         │machine_balance│
                                         └───────────────┘
+```
 
 Usuarios (users.csv) interactúan como:
 
-creadores
+- creadores
 
-modificadores
+- modificadores
 
-actores en logs
+- actores en logs
 
-responsables de balances
+- responsables de balances
 
 
 ---

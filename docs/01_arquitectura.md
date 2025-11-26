@@ -21,6 +21,7 @@ La arquitectura se basa en tres capas principales:
 
 La carpeta `back/` contiene los siguientes módulos:
 
+```markdown
 back/
 ├── api/
 │ ├── v1/
@@ -69,7 +70,7 @@ back/
 ├── init_csvs.py
 ├── main.py
 └── init.py
-
+```
 
 ### Rol de cada módulo
 
@@ -191,28 +192,29 @@ uvicorn back.main:app --reload
 
 
 ## 7. Diagrama general de arquitectura
+```pgsql
                  ┌────────────────────────┐
-                 │        Cliente          │
-                 │ (Frontend, Postman, etc)│
+                 │        Cliente         │
+                 │(Frontend, Postman, etc)│
                  └─────────────┬──────────┘
                                │ HTTP Requests
                                ▼
                   ┌─────────────────────────┐
-                  │          API             │
-                  │      (FastAPI)           │
+                  │          API            │
+                  │      (FastAPI)          │
                   └───────┬─────────────────┘
                           │ Llama funciones del dominio
                           ▼
         ┌──────────────────────────────────────────────┐
-        │                Lógica de Negocio              │
-        │                  (domain/)                    │
-        │  Validaciones, cálculos, reglas del sistema   │
+        │                Lógica de Negocio             │
+        │                  (domain/)                   │
+        │  Validaciones, cálculos, reglas del sistema  │
         └──────────────┬───────────────────────────────┘
                        │ Opera sobre datos
                        ▼
          ┌──────────────────────────────────────────┐
-         │               Persistencia                │
-         │        (storage/ + archivos CSV)          │
+         │               Persistencia               │
+         │        (storage/ + archivos CSV)         │
          └────────────┬─────────────────────────────┘
                       │ Lectura/Escritura
                       ▼
@@ -220,7 +222,7 @@ uvicorn back.main:app --reload
             │         data/            │
             │   CSV como BD liviana    │
             └──────────────────────────┘
-
+```
 ## 8. Descripción del diagrama
 
 El sistema sigue un enfoque de arquitectura en capas:
