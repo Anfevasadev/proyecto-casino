@@ -293,7 +293,8 @@ export default function MachineBalancePage() {
         <nav className="casino-nav">
           <a href="/casinos" className="nav-link">Casinos</a>
           <a href="/counters" className="nav-link">Contadores</a>
-          <a href="/machine-balance" className="nav-link active">Cuadre</a>
+          <a href="/machine-balance" className="nav-link active">Cuadre por Máquina</a>
+          <a href="/casino-balance" className="nav-link">Cuadre General</a>
           <a href="/profile" className="nav-link">Mi Perfil</a>
           <button onClick={handleLogout} className="logout-btn">Cerrar Sesión</button>
         </nav>

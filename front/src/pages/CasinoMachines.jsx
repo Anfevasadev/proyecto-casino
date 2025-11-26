@@ -148,6 +148,9 @@ export default function CasinoMachines() {
           <a href="/machine-balance">
             Cuadre por Máquina
           </a>
+          <a href="/casino-balance">
+            Cuadre General
+          </a>
           <a href="/counters">
             Contadores
           </a>

@@ -87,6 +87,9 @@ export default function CasinosPage() {
           <a href="/machine-balance" className="nav-link">
             Cuadre por Máquina
           </a>
+          <a href="/casino-balance" className="nav-link">
+            Cuadre General
+          </a>
           <a href="/counters" className="nav-link">
             Contadores
           </a>

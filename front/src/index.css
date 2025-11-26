@@ -951,6 +951,78 @@ body {
     color: var(--color-silver);
 }
 
+.btn-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--color-gold);
+    color: var(--color-gold);
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-secondary:not(:disabled):hover {
+    background: rgba(212, 175, 55, 0.15);
+}
+
+.stats-grid {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.stat-card {
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+}
+
+.stat-label {
+    color: var(--color-silver);
+    font-size: 0.9rem;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--color-white);
+    margin-top: 6px;
+}
+
+.row-warning {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.machine-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.machine-cell strong {
+    color: var(--color-white);
+}
+
+.machine-cell small {
+    color: var(--color-silver);
+}
+
 .chip-purple {
     background: radial-gradient(circle, #ff44ff, #880088);
 }

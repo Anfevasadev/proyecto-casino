@@ -262,6 +262,7 @@ export default function CountersPage() {
           <a href="/casinos" className="nav-link">Casinos</a>
           <a href="/counters" className="nav-link active">Contadores</a>
           <a href="/machine-balance" className="nav-link">Cuadre por Máquina</a>
+          <a href="/casino-balance" className="nav-link">Cuadre General</a>
           <a href="/profile" className="nav-link">Mi Perfil</a>
           <button onClick={handleLogout} className="logout-btn">Cerrar Sesión</button>
         </nav>

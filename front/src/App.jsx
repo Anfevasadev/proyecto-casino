@@ -32,6 +32,7 @@ import CasinosPage from './pages/Casinos'
 import CasinoMachinesPage from './pages/CasinoMachines'
 import CountersPage from './pages/Counters'
 import MachineBalancePage from './pages/MachineBalance'
+import CasinoBalancePage from './pages/CasinoBalance'
 import ProfilePage from './pages/Profile'
 
 export default function App() {
@@ -50,6 +51,8 @@ export default function App() {
         <Route path="/counters" element={<CountersPage />} />
         {/* Cuadre individual por máquina */}
         <Route path="/machine-balance" element={<MachineBalancePage />} />
+        {/* Cuadre general por casino */}
+        <Route path="/casino-balance" element={<CasinoBalancePage />} />
         {/* Perfil de usuario */}
         <Route path="/profile" element={<ProfilePage />} />
       </Routes>
