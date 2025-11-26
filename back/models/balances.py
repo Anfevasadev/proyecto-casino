@@ -62,7 +62,7 @@
 #   - Validar formato de fechas y que los totales sean ≥ 0 (en Out normalmente ya vienen validados).
 # -------------------------------------------
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 
 
@@ -75,10 +75,12 @@ class MachineBalanceIn(BaseModel):
     period_end: str = Field(..., description="Fecha final del periodo (YYYY-MM-DD)")
     locked: Optional[bool] = Field(False, description="Si True, el balance se marcará como bloqueado")
     
-    @validator('period_end')
-    def validate_period(cls, v, values):
+    @field_validator('period_end')
+    def validate_period(cls, v, info):
         """Valida que period_end sea mayor o igual a period_start"""
-        if 'period_start' in values and v < values['period_start']:
+        # info.data contiene los demás campos ya validados
+        period_start = info.data.get('period_start')
+        if period_start is not None and v < period_start:
             raise ValueError('La fecha final debe ser mayor o igual a la fecha inicial')
         return v
 
@@ -108,10 +110,11 @@ class CasinoBalanceIn(BaseModel):
     period_end: str = Field(..., description="Fecha final del periodo (YYYY-MM-DD)")
     locked: Optional[bool] = Field(False, description="Si True, el balance se marcará como bloqueado")
     
-    @validator('period_end')
-    def validate_period(cls, v, values):
+    @field_validator('period_end')
+    def validate_period(cls, v, info):
         """Valida que period_end sea mayor o igual a period_start"""
-        if 'period_start' in values and v < values['period_start']:
+        period_start = info.data.get('period_start')
+        if period_start is not None and v < period_start:
             raise ValueError('La fecha final debe ser mayor o igual a la fecha inicial')
         return v
 
