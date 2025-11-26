@@ -21,6 +21,7 @@ El backend no depende de una base de datos relacional ni NoSQL; toda la persiste
 
 # 2. Estructura de Carpetas (Backend)
 
+```markdown
 back/
 ├── api/ # Endpoints y routers
 │ ├── v1/
@@ -34,7 +35,7 @@ back/
 ├── utils/ # Funciones auxiliares
 ├── main.py # Punto de entrada de la API
 └── ...
-
+```
 ---
 
 # 3. Requerimientos Técnicos del Sistema
@@ -159,19 +160,19 @@ Tokens de acceso para cada usuario autenticado
 
 Actualmente implementado:
 
-Ejecución local
-Persistencia por CSV
-API modular en FastAPI
-Sistema de logs
-Validación de usuarios y roles
-Control de inactivaciones
-Módulo de balances y contadores
-Manejo de máquinas y lugares
+- Ejecución local
+- Persistencia por CSV
+- API modular en FastAPI
+- Sistema de logs
+- Validación de usuarios y roles
+- Control de inactivaciones
+- Módulo de balances y contadores
+- Manejo de máquinas y lugares
 
 Futuras mejoras:
 
-▫ Migrar a base de datos SQL
-▫ Dockerización
-▫ Variables de entorno completas
-▫ Despliegue a nube (Railway/Render/VPS)
+- Migrar a base de datos SQL
+- Dockerización
+- Variables de entorno completas
+- Despliegue a nube (Railway/Render/VPS)
 
