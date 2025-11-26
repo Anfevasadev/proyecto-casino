@@ -145,6 +145,9 @@ export default function CasinoMachines() {
           <a href="#" onClick={(e) => { e.preventDefault(); window.location.href = '/profile' }}>
             Mi Perfil
           </a>
+          <a href="/machine-balance">
+            Cuadre por Máquina
+          </a>
           <a href="/counters">
             Contadores
           </a>

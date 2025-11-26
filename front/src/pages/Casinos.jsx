@@ -84,6 +84,9 @@ export default function CasinosPage() {
           <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); window.location.href = '/profile' }}>
             Mi Perfil
           </a>
+          <a href="/machine-balance" className="nav-link">
+            Cuadre por Máquina
+          </a>
           <a href="/counters" className="nav-link">
             Contadores
           </a>
