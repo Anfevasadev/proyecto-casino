@@ -93,6 +93,9 @@ export default function CasinosPage() {
           <a href="/counters" className="nav-link">
             Contadores
           </a>
+          <a href="/reports" className="nav-link">
+            Reportes
+          </a>
           <button onClick={handleLogout} className="logout-btn">
             Cerrar Sesión
           </button>

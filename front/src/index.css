@@ -1023,6 +1023,28 @@ body {
     color: var(--color-silver);
 }
 
+.participation-panel {
+    margin-top: 40px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid var(--color-gold);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.participation-select {
+    min-height: 180px;
+}
+
+.participation-summary {
+    margin-top: 20px;
+}
+
+.participation-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
+}
+
 .chip-purple {
     background: radial-gradient(circle, #ff44ff, #880088);
 }

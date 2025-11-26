@@ -154,6 +154,9 @@ export default function CasinoMachines() {
           <a href="/counters">
             Contadores
           </a>
+          <a href="/reports">
+            Reportes
+          </a>
           <button onClick={handleLogout} className="logout-btn">
             Cerrar Sesión
           </button>
