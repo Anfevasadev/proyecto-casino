@@ -1,36 +1,9 @@
-/*
-  Esta página muestra la lista de casinos y permite al usuario buscar por nombre.
-
-  Pasos a implementar:
-     1. Importar los hooks de React useState y useEffect.
-     2. Importar axios para realizar solicitudes HTTP.
-     3. Importar el componente CasinoCard.
-     4. Crear variables de estado:
-         - casinos: un arreglo para almacenar la lista de casinos obtenida del backend.
-         - search: una cadena para mantener la consulta de búsqueda actual.
-     5. Usar useEffect para obtener la lista de casinos del backend cuando el
-         componente se monte. Enviar una petición GET a '/api/v1/casinos' usando axios.
-         Almacenar los resultados en el estado 'casinos'. Manejar errores registrándolos
-         o mostrando un mensaje.
-     6. Crear una lista filtrada de casinos basada en la consulta de búsqueda. Por ejemplo,
-         filtrar comprobando si casino.name.toLowerCase().includes(search.toLowerCase()).
-     7. Renderizar un campo de entrada ligado al estado 'search' que se actualice
-         mientras el usuario escribe. Debajo del input, mapear la lista filtrada de casinos y
-         renderizar un <CasinoCard> por cada uno.
-     8. Estilizar la página usando clases de Tailwind CSS para el layout y los espaciados.
-
-  Recuerda: esta página no debe contener la implementación real aquí; deja
-  solo estos comentarios como guía para el desarrollo futuro.
-*/
-
-// TODO: Implementar la página Casinos según las instrucciones anteriores.
-
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect, useCallback } from "react";
 import CasinoCard from "../components/CasinoCard";
 import CreateCasinoForm from "../components/CreateCasinoForm";
 import EditCasinoForm from "../components/EditCasinoForm";
-import "../index.css";
+import client from "../api/client";
+import "../index.css"; // Se importan estilos globales
 
 /*
  * Página de lista de casinos. Al montarse el componente, ejecuta
@@ -39,108 +12,65 @@ import "../index.css";
  * layout definidas en index.css.
  */
 
-// Datos de simulación (mientras el backend no está disponible)
-const MOCK_CASINOS = [
-  {
-    id: 1,
-    name: "Golden Ace Palace",
-    city: "Las Vegas",
-    description: "Experimenta el lujo y el servicio 5 estrellas.",
-  },
-  {
-    id: 2,
-    name: "Red Dragon Resort",
-    city: "Macau",
-    description: "Grandes límites y emocionantes juegos de mesa.",
-  },
-  {
-    id: 3,
-    name: "Royal Fortune City",
-    city: "Atlantic City",
-    description: "Una amplia selección de slots y jackpots progresivos.",
-  },
-];
-
 export default function CasinosPage() {
-  const [query, setQuery] = useState("");
-  const [casinos, setCasinos] = useState([]);
-  const [allCasinos, setAllCasinos] = useState([...MOCK_CASINOS]);
-  const [loading, setLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingCasino, setEditingCasino] = useState(null);
+  const [query, setQuery] = useState(""); // Texto del buscador
+  const [casinos, setCasinos] = useState([]); // Lista remota de casinos
+  const [loading, setLoading] = useState(true); // Estado de carga inicial
+  const [error, setError] = useState(""); // Manejo de errores de API
+  const [showCreateForm, setShowCreateForm] = useState(false); // Control modal de creación
+  const [editingCasino, setEditingCasino] = useState(null); // Casino seleccionado para editar
 
-  // Cargar casinos desde localStorage al iniciar
-  useEffect(() => {
-    const storedCasinos = localStorage.getItem('allCasinos');
-    if (storedCasinos) {
-      try {
-        const parsed = JSON.parse(storedCasinos);
-        setAllCasinos(parsed);
-      } catch (e) {
-        console.error('Error loading casinos from localStorage:', e);
-        setAllCasinos([...MOCK_CASINOS]);
-      }
-    } else {
-      // Si no hay casinos guardados, guardar los mock iniciales
-      localStorage.setItem('allCasinos', JSON.stringify(MOCK_CASINOS));
+  const fetchCasinos = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      // Petición GET al backend con filtro only_active
+      const response = await client.get('/places/casino', { params: { only_active: true, offset: 0 } })
+      const { data } = response;
+      setCasinos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message ?? "No fue posible obtener los casinos");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchCasinos();
-  }, [allCasinos]);
-
-  const fetchCasinos = async (name = "") => {
-    setLoading(true);
-    try {
-      // Simulación de filtro:
-      const filtered = allCasinos.filter((c) =>
-        c.name.toLowerCase().includes(name.toLowerCase())
-      );
-      setCasinos(filtered);
-    } catch (err) {
-      alert("Error al obtener casinos");
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchCasinos(); // Se obtiene la lista al montar el componente
+  }, []);
 
   const handleSearch = (event) => {
-    const value = event.target.value;
-    setQuery(value);
-    fetchCasinos(value);
+    setQuery(event.target.value); // Actualiza el término de búsqueda
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    window.location.href = '/login';
+    localStorage.removeItem('user'); // Limpia sesión local
+    window.location.href = '/login'; // Redirige al login
   };
 
-  const handleCasinoCreated = (newCasino) => {
-    setAllCasinos(prev => {
-      const updated = [...prev, newCasino];
-      localStorage.setItem('allCasinos', JSON.stringify(updated));
-      return updated;
-    });
+  const handleCasinoCreated = async () => {
     setShowCreateForm(false);
-    alert(`¡Casino "${newCasino.name}" creado exitosamente!`);
+    await fetchCasinos(); // Refresca lista tras crear
   };
 
   const handleEditCasino = (casino) => {
-    setEditingCasino(casino);
+    setEditingCasino(casino); // Abre modal con datos del casino
   };
 
-  const handleCasinoUpdated = (updatedCasino) => {
-    setAllCasinos(prev => {
-      const updated = prev.map(casino => 
-        casino.id === updatedCasino.id ? updatedCasino : casino
-      );
-      localStorage.setItem('allCasinos', JSON.stringify(updated));
-      return updated;
-    });
+  const handleCasinoUpdated = async () => {
     setEditingCasino(null);
-    alert(`¡Casino "${updatedCasino.name}" actualizado exitosamente!`);
+    await fetchCasinos(); // Refresca lista tras editar
   };
+
+  const filteredCasinos = casinos.filter((casino) => {
+    const term = query.trim().toLowerCase();
+    if (!term) return true;
+
+    const nombre = (casino?.nombre ?? '').toString().toLowerCase();
+    const codigo = (casino?.codigo_casino ?? '').toString().toLowerCase();
+
+    return nombre.includes(term) || codigo.includes(term);
+  });
 
   // Renderizado del componente
   return (
@@ -202,17 +132,21 @@ export default function CasinosPage() {
           />
         </div>
 
+        {error && (
+          <p className="text-center text-red-400 mb-4">{error}</p>
+        )}
+
         {loading && (
           <p className="text-center text-silver">Cargando casinos...</p>
         )}
 
-        {!loading && casinos.length === 0 && (
+        {!loading && filteredCasinos.length === 0 && (
           <p className="text-center text-silver">No se encontraron casinos.</p>
         )}
 
         {/* SECCIÓN DESCOMENTADA Y ESTILADA: Lista de casinos */}
         <div className="grid-container">
-          {casinos.map((casino) => (
+          {filteredCasinos.map((casino) => (
             <CasinoCard 
               key={casino.id} 
               casino={casino}
