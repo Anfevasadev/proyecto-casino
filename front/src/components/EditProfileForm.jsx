@@ -12,6 +12,10 @@ export default function EditProfileForm({ user, onClose, onProfileUpdated }) {
     name: user.name || '',
     username: user.username || '',
     email: user.email || '',
+    phone: user.phone || '',
+    jobTitle: user.jobTitle || '',
+    notifyEmail: user.notificationPrefs?.email ?? true,
+    notifySms: user.notificationPrefs?.sms ?? false,
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
@@ -19,10 +23,10 @@ export default function EditProfileForm({ user, onClose, onProfileUpdated }) {
   const [errors, setErrors] = useState({})
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value, type, checked } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }))
     // Limpiar error del campo al escribir
     if (errors[name]) {
@@ -48,6 +52,10 @@ export default function EditProfileForm({ user, onClose, onProfileUpdated }) {
 
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email inválido'
+    }
+
+    if (formData.phone && !/^[0-9+\-()\s]{7,20}$/.test(formData.phone)) {
+      newErrors.phone = 'Teléfono inválido'
     }
 
     // Validar contraseña solo si se está intentando cambiar
@@ -79,9 +87,15 @@ export default function EditProfileForm({ user, onClose, onProfileUpdated }) {
     // Preparar datos actualizados
     const updatedUser = {
       ...user,
-      name: formData.name,
-      username: formData.username,
-      email: formData.email
+      name: formData.name.trim(),
+      username: formData.username.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      jobTitle: formData.jobTitle.trim(),
+      notificationPrefs: {
+        email: formData.notifyEmail,
+        sms: formData.notifySms
+      }
     }
 
     // Si se está cambiando la contraseña
@@ -89,14 +103,14 @@ export default function EditProfileForm({ user, onClose, onProfileUpdated }) {
       // Aquí iría la validación con el backend
       // Por ahora solo actualizamos si la contraseña actual coincide
       const storedUser = JSON.parse(localStorage.getItem('user'))
-      if (storedUser.password !== formData.currentPassword) {
+      if (storedUser?.password && storedUser.password !== formData.currentPassword) {
         setErrors({ currentPassword: 'Contraseña actual incorrecta' })
         return
       }
       updatedUser.password = formData.newPassword
     }
 
-    onProfileUpdated(updatedUser)
+    onProfileUpdated(updatedUser, { passwordUpdated: Boolean(formData.newPassword) })
   }
 
   return (
@@ -153,6 +167,32 @@ export default function EditProfileForm({ user, onClose, onProfileUpdated }) {
               />
               {errors.email && <span className="error-message">{errors.email}</span>}
             </div>
+
+            <div className="form-group">
+              <label htmlFor="phone">Teléfono</label>
+              <input
+                type="text"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="(+57) 300 000 0000"
+                className={errors.phone ? 'input-error' : ''}
+              />
+              {errors.phone && <span className="error-message">{errors.phone}</span>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="jobTitle">Cargo / Área</label>
+              <input
+                type="text"
+                id="jobTitle"
+                name="jobTitle"
+                value={formData.jobTitle}
+                onChange={handleChange}
+                placeholder="Administrador, Soporte, Operador..."
+              />
+            </div>
           </div>
 
           {/* Cambio de contraseña */}
@@ -199,6 +239,33 @@ export default function EditProfileForm({ user, onClose, onProfileUpdated }) {
                 className={errors.confirmPassword ? 'input-error' : ''}
               />
               {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+            </div>
+          </div>
+
+          {/* Notificaciones */}
+          <div className="form-section">
+            <h3>📣 Preferencias de notificación</h3>
+            <div className="form-group checkbox-group">
+              <label>
+                <input
+                  type="checkbox"
+                  name="notifyEmail"
+                  checked={formData.notifyEmail}
+                  onChange={handleChange}
+                />
+                Recibir alertas críticas por correo
+              </label>
+            </div>
+            <div className="form-group checkbox-group">
+              <label>
+                <input
+                  type="checkbox"
+                  name="notifySms"
+                  checked={formData.notifySms}
+                  onChange={handleChange}
+                />
+                Enviar confirmaciones por SMS
+              </label>
             </div>
           </div>
 
