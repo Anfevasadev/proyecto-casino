@@ -68,11 +68,13 @@
 # -------------------------------------------
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Path, status
+from fastapi import APIRouter, HTTPException, Path, status, Depends
 from back.models.users import UserIn, UserOut, UserUpdate
 from back.domain.users.create import create_user
 from back.domain.users.update import NotFoundError, update_user
 from back.domain.users.delete import inactivar_usuario, NotFoundError as DeleteNotFoundError
+
+from back.api.deps import verificar_rol
 
 from back.storage import users_repo as repo
 
@@ -86,7 +88,7 @@ def _clock_local() -> str:
 
 
 @router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def create_user_endpoint(user: UserIn):
+def create_user_endpoint(user: UserIn, _: dict = Depends(verificar_rol(["admin"]))):
     try:
         new_user = create_user(user, created_by="system")
         return new_user
@@ -94,7 +96,7 @@ def create_user_endpoint(user: UserIn):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.delete("/{user_id}", status_code=status.HTTP_200_OK)
-def delete_user(user_id: int = Path(..., ge=1)):
+def delete_user(user_id: int = Path(..., ge=1), _: dict = Depends(verificar_rol(["admin"]))):
 	"""
 	Inactiva un usuario (borrado lógico).
 	Establece is_active=False e is_deleted=True.
@@ -114,6 +116,7 @@ def delete_user(user_id: int = Path(..., ge=1)):
 def put_user(
 	user_id: int = Path(..., ge=1),
 	body: UserUpdate | None = None,
+	_: dict = Depends(verificar_rol(["admin"]))
 ):
 	if body is None:
 		body = UserUpdate()

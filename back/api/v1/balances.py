@@ -9,7 +9,7 @@
 
 from datetime import datetime
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query, Path, status
+from fastapi import APIRouter, HTTPException, Query, Path, status, Depends
 from fastapi.responses import Response
 
 from back.models.balances import (
@@ -52,6 +52,8 @@ repo_places = PlaceStorage()
 
 router = APIRouter()
 
+from back.api.deps import verificar_rol
+
 
 def get_current_time():
     """Función auxiliar para obtener la hora actual"""
@@ -67,7 +69,7 @@ def get_current_time():
     summary="Generar cuadre de casino",
     description="Calcula el cuadre consolidado de un casino para un periodo específico"
 )
-def generar_cuadre_casino(data: CasinoBalanceIn):
+def generar_cuadre_casino(data: CasinoBalanceIn, user=Depends(verificar_rol(["admin", "soporte"]))):
     """
     Genera un cuadre general del casino consolidando todas sus máquinas activas.
     
@@ -95,6 +97,8 @@ def generar_cuadre_casino(data: CasinoBalanceIn):
         )
         
         return CasinoBalanceOut(**result)
+
+
         
     except NotFoundError as e:
         raise HTTPException(
@@ -192,7 +196,8 @@ def obtener_cuadre_casino(
     description="Marca un cuadre como bloqueado para evitar modificaciones"
 )
 def bloquear_cuadre_casino(
-    balance_id: int = Path(..., ge=1, description="ID del balance a bloquear")
+    balance_id: int = Path(..., ge=1, description="ID del balance a bloquear"),
+    user=Depends(verificar_rol(["admin"]))
 ):
     """
     Bloquea un cuadre de casino para evitar recálculos o modificaciones.
@@ -240,7 +245,8 @@ def bloquear_cuadre_casino(
 def generar_reporte_detallado_casino(
     place_id: int = Path(..., ge=1, description="ID del casino"),
     period_start: str = Query(..., description="Fecha inicial (YYYY-MM-DD)"),
-    period_end: str = Query(..., description="Fecha final (YYYY-MM-DD)")
+    period_end: str = Query(..., description="Fecha final (YYYY-MM-DD)"),
+    user=Depends(verificar_rol(["admin", "soporte"]))
 ):
     """
     Genera un reporte consolidado detallado del casino.
@@ -296,7 +302,7 @@ def generar_reporte_detallado_casino(
     summary="Generar cuadre de máquina",
     description="Calcula el cuadre de una máquina individual para un periodo específico"
 )
-def generar_cuadre_maquina(data: MachineBalanceIn):
+def generar_cuadre_maquina(data: MachineBalanceIn, user=Depends(verificar_rol(["admin", "soporte", "operador"]))):
     """
     Genera un cuadre de una máquina individual basándose en sus contadores.
     

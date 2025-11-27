@@ -9,6 +9,7 @@ from back.domain.counters.update import modificar_contadores_batch
 from back.domain.counters.read import consultar_contadores_reporte
 
 from back.storage.counters_repo import CountersRepo
+from fastapi import Depends
 from back.storage.machines_repo import MachinesRepo
 from back.storage.places_repo import PlaceStorage
 
@@ -19,6 +20,7 @@ repo_machines = MachinesRepo()
 repo_places = PlaceStorage()
 
 router = APIRouter()
+from back.api.deps import verificar_rol
 
 
 @router.get("/machines-by-casino/{casino_id}", response_model=list[MachineSimple], status_code=status.HTTP_200_OK)
@@ -86,7 +88,7 @@ def post_counter(body: CounterIn):
 	El casino_id debe coincidir con el casino_id de la máquina seleccionada.
 	"""
 	# Validar que el casino existe
-	casino = repo_places.obtener_por_id(body.casino_id)
+def post_counter(body: CounterIn, user=Depends(verificar_rol(["admin", "operador"]))):
 	if casino is None:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Casino con id {body.casino_id} no encontrado")
 	

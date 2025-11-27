@@ -37,6 +37,28 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.router import api_router  # Router principal de la API
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request
+from back.api.deps import oauth2_scheme, decodificar_jwt
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Intentamos decodificar token Bearer si viene
+        auth = request.headers.get("Authorization")
+        if auth and auth.lower().startswith("bearer "):
+            token = auth.split(" ", 1)[1].strip()
+            try:
+                payload = decodificar_jwt(token)
+                # Dejar disponible info en request.state.user
+                request.state.user = payload
+            except Exception:
+                request.state.user = None
+        else:
+            request.state.user = None
+
+        response = await call_next(request)
+        return response
 
 def create_app() -> FastAPI:
     """
@@ -67,6 +89,8 @@ def create_app() -> FastAPI:
 
     # Incluir el router principal bajo /api
     app.include_router(api_router, prefix="/api")
+    # Agregar middleware de autenticación (no obliga, facilita acceso al request)
+    app.add_middleware(AuthMiddleware)
     return app
 
 # Instancia de aplicación para Uvicorn

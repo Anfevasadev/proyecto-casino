@@ -1,44 +1,69 @@
 # back/domain/users/login.py
 
-from back.storage.users_repo import get_user_by_username # Importamos la función que creamos para acceder a los datos
+from datetime import datetime, timedelta
+from typing import Union, Dict
 
-from back.models.auth import LoginOut # Importamos el modelo de salida de Pydantic
-from typing import Union
-from fastapi import HTTPException, status # Importamos herramientas de FastAPI para manejar errores HTTP
+from passlib.context import CryptContext
+from jose import jwt
+from fastapi import HTTPException, status
 
-def login_user(username: str, password: str) -> Union[LoginOut, HTTPException]: # Creamos una funcion para que valide las credenciales y si el usuario está activo, En caso de que exista un error, lo manejará el HTTPException que importamos de FastAPI 
+from back.storage.users_repo import get_user_by_username, update_user_row
+from back.models.auth import LoginOut
+from back.core import settings
 
-    user = get_user_by_username(username) # Buscamos el usuario 
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-    # --- REGLA 1: Existencia y Credenciales (401 Unauthorized) ---
-    
-    if not user:  # si el usuario no se encontró lanzamos el error 401
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuario inválido. El usuario no está registrado"
-        )
 
-    # --- REGLA 2: Validación de Contraseña (401 Unauthorized) ---
-    
-    if user['password'] != password: # Verificamos la contraseña. En un caso donde el usuario exista pero la contraseña no sea correcta también se lanza el error
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Contraseña incorrecta. Intente nuevamente"
-        )
+def _verify_password(plain: str, hashed: str) -> bool:
+    # Try bcrypt verify first if the stored looks like a hash
+    try:
+        return pwd_context.verify(plain, hashed)
+    except Exception:
+        # Fallback: compare raw strings (migration support for existing CSVs)
+        return plain == hashed
 
-    # --- REGLA 3: Validación de Estado Activo (403 Forbidden) ---
-    
-    if not user.get('is_active', False): # Verificamos si el usuario está activo o no con ayuda de los booleanos obtenidos del diccionario en la fila de is_active
-        raise HTTPException( #En un caso donde el usuario y contraseña sean correctos pero el usuario esté inactivo se lanzará el error 403
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Usuario inactivo. Contacte al administrador."
-        )
 
-    # --- Construimos la Respuesta ---
+def _hash_password(password: str) -> str:
+    return pwd_context.hash(password)
 
-    return LoginOut(
-        # Aseguramos que el id sea un entero antes de pasarlo al modelo
-        id=int(user['id']), 
-        username=user['username'],
-        role=user['role']
-    )
+
+def _create_access_token(data: Dict, expires_delta: timedelta | None = None) -> str:
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + settings.ACCESS_TOKEN_EXPIRE
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return encoded_jwt
+
+
+def login_user(username: str, password: str) -> Union[LoginOut, HTTPException]:
+    user = get_user_by_username(username)
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inválido. El usuario no está registrado")
+
+    # Validate password: support hashed and plain (migration)
+    stored_pw = user.get("password", "")
+    if not _verify_password(password, stored_pw):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Contraseña incorrecta. Intente nuevamente")
+
+    # Check active
+    if not user.get('is_active', False):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuario inactivo. Contacte al administrador.")
+
+    # If stored password was plain (not hashed) re-hash and persist
+    if not str(stored_pw).startswith("$2"):
+        try:
+            new_hash = _hash_password(password)
+            update_user_row(int(user["id"]), {"password": new_hash, "updated_at": datetime.now().strftime(settings.TIME_FMT), "updated_by": "system"})
+        except Exception:
+            # best-effort, do not block login if update fails
+            pass
+
+    token_data = {"sub": str(int(user["id"])), "username": user["username"], "role": user.get("role")}
+    access_token = _create_access_token(token_data)
+
+    return LoginOut(id=int(user['id']), username=user['username'], role=user.get('role'), access_token=access_token)

@@ -8,3 +8,5 @@ class LoginOut(BaseModel):  #devolvemos los datos necesarios tales como el id, e
     id: int
     username: str
     role: str
+    access_token: str
+    token_type: str = "bearer"

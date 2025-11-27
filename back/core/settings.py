@@ -26,3 +26,29 @@
 #   - No incluir secretos ni credenciales.
 #   - Evitar leer variables de entorno para mantenerlo simple (académico).
 # -------------------------------------------
+
+from pathlib import Path
+from datetime import timedelta
+
+# Base dirs
+BASE_DIR = Path(__file__).resolve().parents[2]
+DATA_DIR = BASE_DIR / "data"
+
+# Time format
+TIME_FMT = "%Y-%m-%d %H:%M:%S"
+
+# Pagination
+DEFAULT_LIMIT = 50
+MAX_LIMIT = 100
+
+# Roles
+ROLES_PERMITIDOS = {"admin", "operador", "soporte"}
+
+# JWT / Auth settings (simple, for dev)
+SECRET_KEY = "change-me-in-prod-very-secret-key"
+ALGORITHM = "HS256"
+# Token expiration (minutes)
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 8  # 8 hours
+
+# Convenience
+ACCESS_TOKEN_EXPIRE = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
