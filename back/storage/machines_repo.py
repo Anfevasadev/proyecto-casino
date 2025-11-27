@@ -140,3 +140,44 @@ class MachinesRepo:
             result = [m for m in result if str(m.get("estado", "")).lower() == "false"]
         
         return result
+
+    def actualizar(self, machine_id: int, cambios: dict, actor: str) -> dict | None:
+        """
+        Actualiza una máquina con los cambios especificados.
+        Retorna el registro actualizado o None si no existe.
+        
+        cambios: dict con campos permitidos (marca, modelo, serial, asset, casino_id)
+        NO se puede modificar: id, denominacion, created_at, created_by
+        """
+        self.data = self._load()
+        
+        # Buscar la máquina
+        machine = None
+        machine_index = None
+        for idx, m in enumerate(self.data):
+            if int(m["id"]) == machine_id:
+                machine = m
+                machine_index = idx
+                break
+        
+        if machine is None:
+            return None
+        
+        # Campos permitidos para actualizar
+        campos_permitidos = ["marca", "modelo", "serial", "asset", "casino_id"]
+        
+        # Aplicar cambios válidos
+        for campo, valor in cambios.items():
+            if campo in campos_permitidos and valor is not None:
+                machine[campo] = str(valor)
+        
+        # Actualizar auditoría
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        machine["updated_at"] = now
+        machine["updated_by"] = actor
+        
+        # Guardar cambios
+        self.data[machine_index] = machine
+        self._save()
+        
+        return machine

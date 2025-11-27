@@ -76,11 +76,12 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 from pydantic import BaseModel
 
-from back.models.machines import MachineIn, MachineOut
+from back.models.machines import MachineIn, MachineOut, MachineUpdate
 from back.storage.machines_repo import MachinesRepo
 from back.storage.places_repo import PlaceStorage
 from back.domain.machines.inativation import inactivar_maquina_por_serial
 from back.domain.machines.activation import activar_maquina_por_serial
+from back.domain.machines.update import actualizar_maquina, ActualizacionMaquinaError
 
 repo = MachinesRepo()
 repo_places = PlaceStorage()
@@ -206,7 +207,65 @@ def obtener_maquina(machine_id: int):
     )
 
 
-@router.post("/inactivate")
+@router.put("/{machine_id}", response_model=MachineOut)
+def actualizar_maquina_endpoint(machine_id: int, cambios: MachineUpdate, actor: str = "system"):
+    """
+    Actualiza una máquina existente.
+    
+    Restricción importante: La denominación NO puede ser modificada, ya que es la base
+    para los cálculos de conversión de contadores a valores monetarios.
+    
+    Campos que SÍ se pueden modificar: marca, modelo, serial, asset, casino_id.
+    
+    Args:
+        machine_id: ID de la máquina a actualizar.
+        cambios: Objeto con los campos a actualizar.
+        actor: Usuario que realiza la operación.
+    
+    Returns:
+        MachineOut: La máquina actualizada.
+    """
+    try:
+        # Convertir el modelo Pydantic a diccionario, filtrando valores None
+        cambios_dict = cambios.dict(exclude_none=True)
+        
+        # Ejecutar lógica de dominio con validaciones
+        maquina_actualizada = actualizar_maquina(
+            machine_id=machine_id,
+            cambios=cambios_dict,
+            machines_repo=repo,
+            places_repo=repo_places,
+            actor=actor
+        )
+        
+        # Convertir resultado al modelo de salida
+        try:
+            denominacion_val = float(maquina_actualizada["denominacion"]) if maquina_actualizada.get("denominacion") else 0.0
+        except (ValueError, TypeError):
+            denominacion_val = 0.0
+        
+        return MachineOut(
+            id=int(maquina_actualizada["id"]),
+            marca=maquina_actualizada["marca"],
+            modelo=maquina_actualizada["modelo"],
+            serial=maquina_actualizada["serial"],
+            asset=maquina_actualizada["asset"],
+            denominacion=denominacion_val,
+            estado=str(maquina_actualizada.get("estado", "True")).lower() == "true",
+            casino_id=int(maquina_actualizada["casino_id"])
+        )
+    
+    except ActualizacionMaquinaError as e:
+        # Distinguir entre máquina no encontrada y otros errores
+        if "no encontrada" in str(e).lower():
+            raise HTTPException(status_code=404, detail=str(e))
+        else:
+            raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+
 def inactivate_machine(payload: SerialAction):
     try:
         result = inactivar_maquina_por_serial(

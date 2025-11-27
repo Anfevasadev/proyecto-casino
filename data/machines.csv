@@ -1,7 +1,7 @@
 id,marca,modelo,serial,asset,denominacion,estado,casino_id,created_at,created_by,updated_at,updated_by,is_active
-1,x,y,1234,A001,Tragamonedas,True,1,2025-11-25 01:24:49,system,2025-11-25 01:24:49,system,True
-2,y,z,12345,A0011,Tragamonedas,True,1,2025-11-25 01:25:27,system,2025-11-25 01:55:13,admin,True
-3,RAZER,XYZ,2580,a007,Ruleta,True,2,2025-11-25 01:40:01,admin,2025-11-25 01:40:01,admin,True
-4,x,string,string,string,string,False,1,2025-11-25 02:38:56,system,2025-11-25 02:41:37,system,False
-5,1122,qss,sasas,psams,asas,True,2,2025-11-26 06:24:19,system,2025-11-26 06:24:19,system,
-6,wqqw,eweew,asasss,wweeew,sdsds,False,5,2025-11-26 06:26:10,system,2025-11-26 06:29:13,user1,False
+1,Juan,Juan,Juan,Juan,100.0,True,2,2025-11-25 01:24:49,system,2025-11-27 01:27:03,Juan,True
+2,y,z,12345,A0011,50.0,True,1,2025-11-25 01:25:27,system,2025-11-25 01:55:13,admin,True
+3,RAZER,XYZ,2580,a007,200.0,True,2,2025-11-25 01:40:01,admin,2025-11-25 01:40:01,admin,True
+4,x,string,string,string,75.0,False,1,2025-11-25 02:38:56,system,2025-11-25 02:41:37,system,False
+5,1122,qss,sasas,psams,150.0,True,2,2025-11-26 06:24:19,system,2025-11-26 06:24:19,system,
+6,wqqw,eweew,asasss,wweeew,250.0,False,5,2025-11-26 06:26:10,system,2025-11-26 06:29:13,user1,False

@@ -50,6 +50,19 @@ class MachineIn(BaseModel):
     is_active: bool = True
 
 
+class MachineUpdate(BaseModel):
+    """
+    Modelo para actualizar máquinas.
+    Campos permitidos: marca, modelo, serial, asset, casino_id.
+    La denominación NO se puede modificar para garantizar integridad de datos.
+    """
+    marca: str | None = None
+    modelo: str | None = None
+    serial: str | None = None
+    asset: str | None = None
+    casino_id: int | None = None
+
+
 class MachineOut(BaseModel):
     id: int
     marca: str
