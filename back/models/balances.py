@@ -213,17 +213,11 @@ class ReportFilters(BaseModel):
         description="Filtrar por modelo de máquina (ej: Sphinx, Buffalo)"
     )
     
-    # Filtro de ubicación
-    ciudad: Optional[str] = Field(
-        None,
-        description="Filtrar por ciudad donde está ubicado el casino"
-    )
-    
     # Filtro de casino específico
     casino_id: Optional[int] = Field(
         None,
         ge=1,
-        description="ID específico del casino (opcional si se filtra por ciudad)"
+        description="ID específico del casino"
     )
     
     # Tipo de reporte
@@ -251,7 +245,7 @@ class ReportFilters(BaseModel):
         
         return v
     
-    @field_validator('marca', 'modelo', 'ciudad')
+    @field_validator('marca', 'modelo')
     @classmethod
     def validate_text_filters(cls, v: Optional[str]) -> Optional[str]:
         """Normaliza filtros de texto"""

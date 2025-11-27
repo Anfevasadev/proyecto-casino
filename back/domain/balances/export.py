@@ -87,8 +87,6 @@ def generar_pdf_reporte(report: Dict[str, Any]) -> bytes:
             filters_list.append(f"Marca: {filters['marca']}")
         if filters.get('modelo'):
             filters_list.append(f"Modelo: {filters['modelo']}")
-        if filters.get('ciudad'):
-            filters_list.append(f"Ciudad: {filters['ciudad']}")
         if filters.get('casino_id'):
             filters_list.append(f"Casino ID: {filters['casino_id']}")
         

@@ -269,7 +269,6 @@ def generar_reporte_con_filtros(
     casino_id: int = None,
     marca: str = None,
     modelo: str = None,
-    ciudad: str = None,
     tipo_reporte: str = "detallado"
 ) -> Dict[str, Any]:
     """
@@ -279,7 +278,6 @@ def generar_reporte_con_filtros(
     - Casino específico (casino_id)
     - Marca de máquinas
     - Modelo de máquinas
-    - Ciudad
     
     Tipos de reporte:
     - "detallado": Desglose por máquina con contadores inicial/final
@@ -331,18 +329,8 @@ def generar_reporte_con_filtros(
             raise NotFoundError(f"Casino con id {casino_id} está inactivo")
         
         casinos = [place]
-    elif ciudad:
-        # Filtro por ciudad - obtener todos los casinos de esa ciudad
-        all_places = places_repo.listar(only_active=True)
-        casinos = [
-            p for p in all_places 
-            if p.get('ciudad', '').lower().strip() == ciudad.lower().strip()
-        ]
-        
-        if not casinos:
-            raise NotFoundError(f"No se encontraron casinos activos en la ciudad '{ciudad}'")
     else:
-        # Sin filtro de casino o ciudad - obtener todos los casinos activos
+        # Sin filtro de casino - obtener todos los casinos activos
         casinos = places_repo.listar(only_active=True)
     
     # 3. Inicializar acumuladores globales

@@ -644,7 +644,6 @@ def generar_reporte_filtros(
     casino_id: Optional[int] = Query(None, ge=1, description="ID del casino (opcional)"),
     marca: Optional[str] = Query(None, description="Marca de máquina (ej: IGT, Aristocrat)"),
     modelo: Optional[str] = Query(None, description="Modelo de máquina (ej: Sphinx, Buffalo)"),
-    ciudad: Optional[str] = Query(None, description="Ciudad del casino"),
     tipo_reporte: str = Query("detallado", description="Tipo: 'detallado', 'consolidado', 'resumen'")
 ):
     """
@@ -654,14 +653,11 @@ def generar_reporte_filtros(
     - **casino_id**: Filtrar por un casino específico
     - **marca**: Filtrar por marca de máquinas
     - **modelo**: Filtrar por modelo de máquinas
-    - **ciudad**: Filtrar por ciudad (todos los casinos de esa ciudad)
     
     **Tipos de reporte:**
     - **detallado**: Desglose completo por máquina con contadores inicial/final
     - **consolidado**: Solo totales por categoría (IN, OUT, JACKPOT, BILLETERO)
     - **resumen**: Solo estadísticas generales
-    
-    **Nota**: Si se especifica casino_id, se ignora el filtro de ciudad.
     """
     try:
         report = generar_reporte_con_filtros(
@@ -675,7 +671,6 @@ def generar_reporte_filtros(
             casino_id=casino_id,
             marca=marca,
             modelo=modelo,
-            ciudad=ciudad,
             tipo_reporte=tipo_reporte
         )
         
@@ -710,7 +705,6 @@ def exportar_reporte_filtros_pdf(
     casino_id: Optional[int] = Query(None, ge=1, description="ID del casino (opcional)"),
     marca: Optional[str] = Query(None, description="Marca de máquina"),
     modelo: Optional[str] = Query(None, description="Modelo de máquina"),
-    ciudad: Optional[str] = Query(None, description="Ciudad del casino"),
     tipo_reporte: str = Query("detallado", description="Tipo: 'detallado', 'consolidado', 'resumen'")
 ):
     """
@@ -736,7 +730,6 @@ def exportar_reporte_filtros_pdf(
             casino_id=casino_id,
             marca=marca,
             modelo=modelo,
-            ciudad=ciudad,
             tipo_reporte=tipo_reporte
         )
         
@@ -747,7 +740,6 @@ def exportar_reporte_filtros_pdf(
         filters_str = f"{'casino' + str(casino_id) if casino_id else ''}"
         filters_str += f"{'_' + marca if marca else ''}"
         filters_str += f"{'_' + modelo if modelo else ''}"
-        filters_str += f"{'_' + ciudad if ciudad else ''}"
         if not filters_str:
             filters_str = "general"
         
@@ -795,7 +787,6 @@ def exportar_reporte_filtros_excel(
     casino_id: Optional[int] = Query(None, ge=1, description="ID del casino (opcional)"),
     marca: Optional[str] = Query(None, description="Marca de máquina"),
     modelo: Optional[str] = Query(None, description="Modelo de máquina"),
-    ciudad: Optional[str] = Query(None, description="Ciudad del casino"),
     tipo_reporte: str = Query("detallado", description="Tipo: 'detallado', 'consolidado', 'resumen'")
 ):
     """
@@ -820,7 +811,6 @@ def exportar_reporte_filtros_excel(
             casino_id=casino_id,
             marca=marca,
             modelo=modelo,
-            ciudad=ciudad,
             tipo_reporte=tipo_reporte
         )
         
@@ -831,7 +821,6 @@ def exportar_reporte_filtros_excel(
         filters_str = f"{'casino' + str(casino_id) if casino_id else ''}"
         filters_str += f"{'_' + marca if marca else ''}"
         filters_str += f"{'_' + modelo if modelo else ''}"
-        filters_str += f"{'_' + ciudad if ciudad else ''}"
         if not filters_str:
             filters_str = "general"
         
