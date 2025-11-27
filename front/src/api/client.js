@@ -11,6 +11,24 @@ const client = axios.create({
   }
 });
 
+// Interceptor para agregar el token de autenticación a cada petición
+client.interceptors.request.use(
+  (config) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user?.access_token) {
+        config.headers.Authorization = `Bearer ${user.access_token}`;
+      }
+    } catch (error) {
+      console.error('Error al obtener token:', error);
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 client.interceptors.response.use(
   (response) => response,
   (error) => {

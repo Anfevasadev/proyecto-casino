@@ -24,7 +24,10 @@ from back.api.deps import verificar_rol
 
 
 @router.get("/machines-by-casino/{casino_id}", response_model=list[MachineSimple], status_code=status.HTTP_200_OK)
-def get_machines_by_casino(casino_id: int = Path(..., ge=1, description="ID del casino")):
+def get_machines_by_casino(
+	casino_id: int = Path(..., ge=1, description="ID del casino"),
+	user=Depends(verificar_rol(["admin", "operador", "soporte"]))
+):
 	"""
 	Obtener todas las máquinas de un casino específico (activas e inactivas).
 	Este endpoint se usa antes de crear un contador para seleccionar la máquina.
@@ -81,14 +84,13 @@ def get_counter(counter_id: int = Path(..., ge=1)):
 
 
 @router.post("", response_model=CounterOutWithMachine, status_code=status.HTTP_201_CREATED)
-
-def post_counter(body: CounterIn):
+def post_counter(body: CounterIn, user=Depends(verificar_rol(["admin", "operador"]))):
 	"""
 	Crear un nuevo contador. Valida campos obligatorios y unicidad por casino-fecha-máquina.
 	El casino_id debe coincidir con el casino_id de la máquina seleccionada.
 	"""
 	# Validar que el casino existe
-def post_counter(body: CounterIn, user=Depends(verificar_rol(["admin", "operador"]))):
+	casino = repo_places.obtener_por_id(body.casino_id)
 	if casino is None:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Casino con id {body.casino_id} no encontrado")
 	

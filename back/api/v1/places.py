@@ -64,6 +64,8 @@ from back.domain.places.create import PlaceDomain
 from back.domain.places.management import CasinoManagement
 from back.storage.places_repo import PlaceStorage
 from back.models.places import PlaceIn, PlaceOut
+from back.api.deps import verificar_rol
+from fastapi import Depends
 
 router = APIRouter()
 
@@ -71,7 +73,11 @@ router = APIRouter()
 # INACTIVAR CASINO
 # --------------------------------------
 @router.put("/casino/{casino_id}/inactivar")
-def inactivar_casino(casino_id: int, actor: str = "system"):
+def inactivar_casino(
+	casino_id: int,
+	actor: str = "system",
+	user=Depends(verificar_rol(["admin"]))
+):
     """
     Marca un casino como inactivo usando la capa de dominio.
     """
@@ -92,7 +98,11 @@ def inactivar_casino(casino_id: int, actor: str = "system"):
 # Activar CASINO
 # --------------------------------------
 @router.put("/casino/{casino_id}/activar")
-def activar_casino(casino_id: int, actor: str = "system"):
+def activar_casino(
+	casino_id: int,
+	actor: str = "system",
+	user=Depends(verificar_rol(["admin"]))
+):
     """
     Marca un casino como activo usando la capa de storage
     """
@@ -113,7 +123,11 @@ def activar_casino(casino_id: int, actor: str = "system"):
 # CREAR CASINO
 # --------------------------------------
 @router.post("/casino", response_model=PlaceOut)
-def crear_casino(place: PlaceIn, actor: str = "system"):
+def crear_casino(
+	place: PlaceIn,
+	actor: str = "system",
+	user=Depends(verificar_rol(["admin"]))
+):
     """
     Crea un nuevo casino usando la capa de dominio.
     """
@@ -142,7 +156,12 @@ def listar_casinos(only_active: bool = True, limit: int | None = None, offset: i
 # MODIFICAR CASINO
 # --------------------------------------
 @router.put("/casino/{casino_id}")
-def modificar_casino(casino_id: int, body: PlaceUpdate, actor: str = "system"):
+def modificar_casino(
+	casino_id: int,
+	body: PlaceUpdate,
+	actor: str = "system",
+	user=Depends(verificar_rol(["admin"]))
+):
     """Actualiza campos editables de un casino (no permite cambiar el código)."""
     try:
         cambios = body.model_dump(exclude_unset=True)
