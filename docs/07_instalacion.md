@@ -51,8 +51,7 @@ back/
 ├── models/ # Modelos Pydantic
 ├── services/ # Lógica de negocio
 ├── storage/ # Manejo de persistencia en CSV
-├── csv_data/ # Archivos CSV del sistema
-├── init_csvs.py # Generador inicial de CSV
+├── data/ # Archivos CSV del sistema
 ├── main.py # Punto de entrada de la API
 └── requirements.txt # Dependencias
 ```
@@ -86,25 +85,14 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-# 7. Inicializar archivos CSV (si es necesario)
+# 7. Archivos CSV (datos)
 
-Si algún CSV no existe o está vacío, ejecutar:
-```bash
-python init_csvs.py
-```
-Esto crea estructuras base como:
+Los archivos CSV están en la carpeta `data/`. Si alguno falta o se corrompe, las opciones habituales son:
 
-- users.csv
+- Recuperar desde una copia de seguridad o el historial de Git.
+- Crear el archivo manualmente siguiendo el esquema en `docs/02_modelo_datos.md`.
 
-- machines.csv
-
-- places.csv
-
-- logs.csv
-
-- counters.csv
-
-- balances.csv
+No existe un script `init_csvs.py` en este repo — la restauración es manual o desde backups.
 
 # 8. Configuración del archivo .env
 
@@ -113,7 +101,7 @@ Crear un archivo ``.env`` en ``/back/`` con este contenido como ejemplo:
 APP_ENV=development
 SECRET_KEY=changeme
 
-CSV_BASE_PATH=csv_data
+CSV_BASE_PATH=data
 
 # Logging
 LOG_LEVEL=INFO
