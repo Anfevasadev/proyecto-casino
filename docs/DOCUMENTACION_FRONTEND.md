@@ -95,12 +95,40 @@ export default defineConfig({
 
 ---
 
-## 4. Cliente API
+### 4. Cliente API
 
 ### 4.1 src/api/client.js
 
+El cliente Axios se centraliza en `src/api/client.js`. Actualmente el repositorio guarda una URL base (usada en desarrollo remoto), pero lo recomendable es usar una variable de entorno para facilitar el desarrollo local y despliegues.
 
-  baseURL: 'https://ubiquitous-space-fortnight-6vrxwq5jq4wc5p99-8000.app.github.dev/api/v1',
+Recomendación de configuración (no se hace modificación automática sobre el código del frontend en este cambio; esta documentación indica cómo configurar el proyecto):
+
+- Usar la variable de entorno Vite `VITE_API_BASE_URL` para definir la URL del backend en desarrollo/producción.
+
+Ejemplo de `src/api/client.js` recomendado:
+
+```javascript
+import axios from 'axios';
+
+const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+const client = axios.create({
+  baseURL: base,
+  timeout: 8000,
+  headers: { 'Content-Type': 'application/json' }
+});
+
+client.interceptors.response.use(
+  response => response,
+  error => {
+    const detail = error?.response?.data?.detail;
+    if (detail) error.message = Array.isArray(detail) ? detail.join(', ') : detail;
+    return Promise.reject(error);
+  }
+);
+
+export default client;
+```
   headers: {
     'Content-Type': 'application/json'
   (error) => {
@@ -111,7 +139,7 @@ export default defineConfig({
 
 | Feature | Descripción |
 |---------|------------|
-| **Base URL** | Apunta a la API v1 del backend |
+| **Base URL** | Se recomienda apuntar a la API v1 del backend y establecerla mediante `VITE_API_BASE_URL` |
 | **Timeout** | 8 segundos máximo por request |
 | **Headers** | JSON por defecto |
 | **Interceptor** | Extrae mensajes de error del backend |
@@ -550,7 +578,15 @@ npm run dev
 
 Accede a `http://localhost:5173`
 
-**Nota:** El backend debe estar corriendo en `http://localhost:8000`
+**Nota:** El backend debe estar corriendo (por ejemplo en `http://localhost:8000`) cuando desarrolles localmente. Para evitar cambiar el cliente manualmente, configura `VITE_API_BASE_URL` en un archivo `.env` dentro de `front/` (ej. `.env.local`).
+
+Ejemplo `.env.local` (en `front/`):
+
+```
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+```
+
+También se puede usar la proxy de Vite (`vite.config.js`) para redirigir `/api` a `http://localhost:8000` en desarrollo.
 
 ### 10.3 Compilar para Producción
 
