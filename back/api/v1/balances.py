@@ -81,6 +81,9 @@ def generar_cuadre_casino(data: CasinoBalanceIn, user=Depends(verificar_rol(["ad
     Retorna el balance generado con todos los totales consolidados.
     """
     try:
+        # Obtener username del usuario autenticado
+        actor = user.get("username", "api_user")
+        
         # Llamar a la función de dominio para calcular el cuadre
         result = calcular_cuadre_casino(
             place_id=data.place_id,
@@ -91,7 +94,7 @@ def generar_cuadre_casino(data: CasinoBalanceIn, user=Depends(verificar_rol(["ad
             places_repo=repo_places,
             balances_repo=repo_balances,
             clock=get_current_time,
-            actor="api_user",  # TODO: obtener del usuario autenticado
+            actor=actor,
             persist=True,
             lock=data.locked or False
         )
@@ -204,6 +207,9 @@ def bloquear_cuadre_casino(
     
     - **balance_id**: ID del balance a bloquear
     """
+    # Obtener username del usuario autenticado
+    actor = user.get("username", "api_user")
+    
     # Verificar que existe
     balance = repo_balances.obtener_casino_balance_por_id(balance_id)
     if not balance:
@@ -222,7 +228,7 @@ def bloquear_cuadre_casino(
     # Bloquear
     success = repo_balances.lock_casino_balance(
         balance_id=balance_id,
-        actor="api_user",  # TODO: obtener del usuario autenticado
+        actor=actor,
         clock=get_current_time
     )
     
@@ -262,6 +268,9 @@ def generar_reporte_detallado_casino(
     - Exportación a PDF o Excel
     - Análisis y auditorías
     """
+    # Obtener username del usuario autenticado
+    actor = user.get("username", "api_user")
+    
     try:
         report = generar_reporte_consolidado_casino(
             place_id=place_id,
@@ -271,7 +280,7 @@ def generar_reporte_detallado_casino(
             machines_repo=repo_machines,
             places_repo=repo_places,
             clock=get_current_time,
-            actor="api_user"  # TODO: obtener del usuario autenticado
+            actor=actor
         )
         
         return CasinoDetailedReport(**report)
@@ -326,6 +335,9 @@ def generar_cuadre_maquina(data: MachineBalanceIn, user=Depends(verificar_rol(["
     Retorna el balance generado con todos los totales calculados.
     """
     try:
+        # Obtener username del usuario autenticado
+        actor = user.get("username", "api_user")
+        
         # Llamar a la función de dominio para calcular el cuadre
         result = calcular_cuadre_maquina(
             machine_id=data.machine_id,
@@ -335,7 +347,7 @@ def generar_cuadre_maquina(data: MachineBalanceIn, user=Depends(verificar_rol(["
             machines_repo=repo_machines,
             balances_repo=repo_balances,
             clock=get_current_time,
-            actor="api_user",  # TODO: obtener del usuario autenticado
+            actor=actor,
             persist=True,
             lock=data.locked or False
         )

@@ -94,8 +94,8 @@ class MachineBalanceOut(BaseModel):
     in_total: float = Field(..., ge=0)
     out_total: float = Field(..., ge=0)
     jackpot_total: float = Field(..., ge=0)
-    billetero_total: float = Field(..., ge=0)
-    utilidad_total: float
+    billetero_total: float  # Puede ser negativo si se extrae dinero
+    utilidad_total: float  # Puede ser negativo si hay pérdidas
     generated_at: str
     generated_by: str
     locked: bool
@@ -128,8 +128,8 @@ class CasinoBalanceOut(BaseModel):
     in_total: float = Field(..., ge=0)
     out_total: float = Field(..., ge=0)
     jackpot_total: float = Field(..., ge=0)
-    billetero_total: float = Field(..., ge=0)
-    utilidad_total: float
+    billetero_total: float  # Puede ser negativo si se extrae dinero
+    utilidad_total: float  # Puede ser negativo si hay pérdidas
     generated_at: str
     generated_by: str
     locked: bool
