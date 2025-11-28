@@ -53,9 +53,9 @@ El proceso de login valida credenciales, genera el token y retorna los datos del
 ┌───────────────────────────────┐
 │ Retornar token y datos usuario│
 └───────────────────────────────┘
-```
 
----
+
+
 
 ## 2. Flujo de Creación de Usuario
 
@@ -76,10 +76,10 @@ El proceso de login valida credenciales, genera el token y retorna los datos del
              │                   │
              ▼                   ▼
 ┌────────────────┐ ┌─────────────────────┐
-│ Retornar error │ │ Hash password       │
+│ Retornar error │ │ Hash password       │   
 └────────────────┘ │ Guardar usuario     │
                    └─────────┬───────────┘
-                                                         ▼
+                             ▼
 ┌────────────────────────────────┐
 │ Retornar usuario creado OK     │
 └────────────────────────────────┘
@@ -87,7 +87,7 @@ El proceso de login valida credenciales, genera el token y retorna los datos del
 
 
 
-# 3. Flujo de Creación de Casino (Place)
+## 3. Flujo de Creación de Casino (Place)
 
          ┌────────────────────────┐
          │ Admin envía datos de   │
@@ -99,7 +99,7 @@ El proceso de login valida credenciales, genera el token y retorna los datos del
      │ no repetido              │
      └──────────┬───────────────┘
                 │
-                ¿Existe?
+              ¿Existe?
              ┌──────────────────────┐
              │                      │
              Sí                     No
@@ -113,9 +113,8 @@ El proceso de login valida credenciales, genera el token y retorna los datos del
 ┌──────────────────────────────────────────┐
 │ Retornar casino creado / datos completos │
 └──────────────────────────────────────────┘
-```
 
----
+
 
 ## 4. Flujo de Registro de Máquina
 
@@ -209,21 +208,21 @@ El proceso de login valida credenciales, genera el token y retorna los datos del
     │ Usuario solicita generar balance global casino  │
     └─────────────────────────┬───────────────────────┘
                               ▼
-     ┌─────────────────────────────────────────┐
-     │ Reunir balances de todas las máquinas   │
-     └──────────────┬──────────────────────────┘
-                    ▼
- ┌────────────────────────────────────────────┐
- │ Sumar totales: in/out/jp/bill/utilidad     │
- └──────────────┬─────────────────────────────┘
-                ▼
-┌───────────────────────────────────────────────────┐
-│ Guardar casino_balance en CSV/DB                  │
-└──────────────────┬────────────────────────────────┘
-                   ▼
-┌───────────────────────────────────────────────────┐
-│ Retornar balance total del casino                 │
-└───────────────────────────────────────────────────┘
+           ┌─────────────────────────────────────────┐
+           │ Reunir balances de todas las máquinas   │
+           └──────────────┬──────────────────────────┘
+                          ▼
+            ┌────────────────────────────────────────────┐
+            │ Sumar totales: in/out/jp/bill/utilidad     │
+            └──────────────┬─────────────────────────────┘
+                           ▼
+            ┌───────────────────────────────────────────────────┐
+            │ Guardar casino_balance en CSV/DB                  │
+            └──────────────────┬────────────────────────────────┘
+                               ▼
+            ┌───────────────────────────────────────────────────┐
+            │ Retornar balance total del casino                 │
+            └───────────────────────────────────────────────────┘
 
 
 ## Modelos de base de datos
@@ -291,6 +290,27 @@ back/
 ├── utils/ # Funciones auxiliares
 ├── main.py # Punto de entrada de la API
 └── ...
+front/
+└── src/                          # Código fuente principal del frontend (React + Vite)
+    ├── api/
+    │   └── client.js             # Configuración del cliente HTTP (axios/fetch). 
+    │                             # Centraliza URL base, headers y manejo de peticiones al backend.
+    │
+    ├── components/               # Componentes reutilizables y modulares.
+    │
+    ├── pages/                    # Páginas principales usadas por el enrutador.
+├── index.html                    # HTML principal donde se carga la aplicación React.
+│
+├── package.json                  # Dependencias, scripts y configuración del proyecto.
+├── package-lock.json             # Versión exacta de dependencias para reproducción precisa.
+│
+├── postcss.config.js             # Configuración de PostCSS usado por Tailwind.
+├── tailwind.config.js            # Configuración personalizada de TailwindCSS.
+├── vite.config.js                # Configuración del bundler Vite.
+│
+├── .gitignore                    # Archivos y carpetas ignorados por Git.
+├── .gitkeep                      # Utilizado para que Git registre carpetas vacías.
+
 
 # 3. Requerimientos Técnicos del Sistema
 
