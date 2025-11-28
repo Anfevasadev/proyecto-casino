@@ -51,6 +51,7 @@ export default function CountersPage() {
   })()
 
   const actor = storedUser?.username || 'system'
+  const hideAdvancedTabs = (storedUser?.role || '').toLowerCase() === 'operador'
 
   const machinesById = useMemo(() => {
     const map = {}
@@ -261,9 +262,13 @@ export default function CountersPage() {
         <nav className="casino-nav">
           <a href="/casinos" className="nav-link">Casinos</a>
           <a href="/counters" className="nav-link active">Contadores</a>
-          <a href="/machine-balance" className="nav-link">Cuadre por Máquina</a>
-          <a href="/casino-balance" className="nav-link">Cuadre General</a>
-          <a href="/reports" className="nav-link">Reportes</a>
+          {!hideAdvancedTabs && (
+            <>
+              <a href="/machine-balance" className="nav-link">Cuadre por Máquina</a>
+              <a href="/casino-balance" className="nav-link">Cuadre General</a>
+              <a href="/reports" className="nav-link">Reportes</a>
+            </>
+          )}
           <a href="/profile" className="nav-link">Mi Perfil</a>
           <button onClick={handleLogout} className="logout-btn">Cerrar Sesión</button>
         </nav>

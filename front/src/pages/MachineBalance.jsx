@@ -55,6 +55,15 @@ export default function MachineBalancePage() {
   const [globalError, setGlobalError] = useState('')
   const [countersError, setCountersError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [sessionUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user'))
+    } catch (err) {
+      console.warn('No fue posible parsear el usuario', err)
+      return null
+    }
+  })
+  const hideAdvancedTabs = (sessionUser?.role || '').toLowerCase() === 'operador'
 
   const [counterSnapshots, setCounterSnapshots] = useState([])
   const [initialCounter, setInitialCounter] = useState(null)
@@ -293,9 +302,13 @@ export default function MachineBalancePage() {
         <nav className="casino-nav">
           <a href="/casinos" className="nav-link">Casinos</a>
           <a href="/counters" className="nav-link">Contadores</a>
-          <a href="/machine-balance" className="nav-link active">Cuadre por Máquina</a>
-          <a href="/casino-balance" className="nav-link">Cuadre General</a>
-          <a href="/reports" className="nav-link">Reportes</a>
+          {!hideAdvancedTabs && (
+            <>
+              <a href="/machine-balance" className="nav-link active">Cuadre por Máquina</a>
+              <a href="/casino-balance" className="nav-link">Cuadre General</a>
+              <a href="/reports" className="nav-link">Reportes</a>
+            </>
+          )}
           <a href="/profile" className="nav-link">Mi Perfil</a>
           <button onClick={handleLogout} className="logout-btn">Cerrar Sesión</button>
         </nav>

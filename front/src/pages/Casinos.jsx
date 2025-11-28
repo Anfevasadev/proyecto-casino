@@ -28,6 +28,7 @@ export default function CasinosPage() {
     }
   });
   const isAdmin = sessionUser?.role === "admin" || sessionUser?.role === "soporte";
+  const hideAdvancedTabs = (sessionUser?.role || '').toLowerCase() === 'operador';
 
   const fetchCasinos = useCallback(async () => {
     setLoading(true);
@@ -111,18 +112,24 @@ export default function CasinosPage() {
           <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); window.location.href = '/profile' }}>
             Mi Perfil
           </a>
-          <a href="/machine-balance" className="nav-link">
-            Cuadre por Máquina
-          </a>
-          <a href="/casino-balance" className="nav-link">
-            Cuadre General
-          </a>
+          {!hideAdvancedTabs && (
+            <>
+              <a href="/machine-balance" className="nav-link">
+                Cuadre por Máquina
+              </a>
+              <a href="/casino-balance" className="nav-link">
+                Cuadre General
+              </a>
+            </>
+          )}
           <a href="/counters" className="nav-link">
             Contadores
           </a>
-          <a href="/reports" className="nav-link">
-            Reportes
-          </a>
+          {!hideAdvancedTabs && (
+            <a href="/reports" className="nav-link">
+              Reportes
+            </a>
+          )}
           <button onClick={handleLogout} className="logout-btn">
             Cerrar Sesión
           </button>

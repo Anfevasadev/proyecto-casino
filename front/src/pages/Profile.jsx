@@ -177,6 +177,11 @@ export default function Profile() {
     { label: 'Contadores', path: '/counters' },
     { label: 'Reportes', path: '/reports' }
   ]
+  const isOperator = (user?.role || '').toLowerCase() === 'operador'
+  const restrictedPaths = new Set(['/machine-balance', '/casino-balance', '/reports'])
+  const visibleNavLinks = isOperator
+    ? navLinks.filter((link) => !restrictedPaths.has(link.path))
+    : navLinks
 
   return (
     <div className="profile-page">
@@ -192,7 +197,7 @@ export default function Profile() {
           <span className="nav-link active" aria-current="page">
             Mi Perfil
           </span>
-          {navLinks.map(({ label, path }) => (
+          {visibleNavLinks.map(({ label, path }) => (
             <a
               key={path}
               href={path}

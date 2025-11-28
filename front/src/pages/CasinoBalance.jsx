@@ -44,6 +44,15 @@ export default function CasinoBalancePage() {
   const [report, setReport] = useState(null)
   const [generatedBalance, setGeneratedBalance] = useState(null)
   const [history, setHistory] = useState([])
+  const [sessionUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user'))
+    } catch (err) {
+      console.warn('No fue posible parsear el usuario', err)
+      return null
+    }
+  })
+  const hideAdvancedTabs = (sessionUser?.role || '').toLowerCase() === 'operador'
 
   const selectedCasino = useMemo(() => {
     return casinos.find((casino) => String(casino.id) === String(selectedCasinoId)) || null
@@ -193,9 +202,13 @@ export default function CasinoBalancePage() {
         <nav className="casino-nav">
           <a href="/casinos" className="nav-link">Casinos</a>
           <a href="/counters" className="nav-link">Contadores</a>
-          <a href="/machine-balance" className="nav-link">Cuadre por Máquina</a>
-          <a href="/casino-balance" className="nav-link active">Cuadre General</a>
-          <a href="/reports" className="nav-link">Reportes</a>
+          {!hideAdvancedTabs && (
+            <>
+              <a href="/machine-balance" className="nav-link">Cuadre por Máquina</a>
+              <a href="/casino-balance" className="nav-link active">Cuadre General</a>
+              <a href="/reports" className="nav-link">Reportes</a>
+            </>
+          )}
           <a href="/profile" className="nav-link">Mi Perfil</a>
           <button onClick={handleLogout} className="logout-btn">Cerrar Sesión</button>
         </nav>

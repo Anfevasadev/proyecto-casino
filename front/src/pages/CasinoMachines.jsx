@@ -29,6 +29,7 @@ export default function CasinoMachines() {
     }
   });
   const isAdmin = sessionUser?.role === "admin" || sessionUser?.role === "soporte";
+  const hideAdvancedTabs = (sessionUser?.role || '').toLowerCase() === 'operador';
   const [availableCasinos, setAvailableCasinos] = useState([])
   const [editingMachine, setEditingMachine] = useState(null)
 
@@ -212,18 +213,24 @@ export default function CasinoMachines() {
           <a href="#" onClick={(e) => { e.preventDefault(); window.location.href = '/profile' }}>
             Mi Perfil
           </a>
-          <a href="/machine-balance">
-            Cuadre por Máquina
-          </a>
-          <a href="/casino-balance">
-            Cuadre General
-          </a>
+          {!hideAdvancedTabs && (
+            <>
+              <a href="/machine-balance">
+                Cuadre por Máquina
+              </a>
+              <a href="/casino-balance">
+                Cuadre General
+              </a>
+            </>
+          )}
           <a href="/counters">
             Contadores
           </a>
-          <a href="/reports">
-            Reportes
-          </a>
+          {!hideAdvancedTabs && (
+            <a href="/reports">
+              Reportes
+            </a>
+          )}
           <button onClick={handleLogout} className="logout-btn">
             Cerrar Sesión
           </button>

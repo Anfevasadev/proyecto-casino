@@ -29,6 +29,15 @@ export default function ReportsPage() {
 
   const [casinos, setCasinos] = useState([])
   const [machines, setMachines] = useState([])
+  const [sessionUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user'))
+    } catch (err) {
+      console.warn('No fue posible parsear el usuario', err)
+      return null
+    }
+  })
+  const hideAdvancedTabs = (sessionUser?.role || '').toLowerCase() === 'operador'
 
   const [selectedCasinoId, setSelectedCasinoId] = useState('')
   const [filters, setFilters] = useState({ marca: '', modelo: '' })
@@ -238,9 +247,13 @@ export default function ReportsPage() {
         <nav className="casino-nav">
           <a href="/casinos" className="nav-link">Casinos</a>
           <a href="/counters" className="nav-link">Contadores</a>
-          <a href="/machine-balance" className="nav-link">Cuadre por Máquina</a>
-          <a href="/casino-balance" className="nav-link">Cuadre General</a>
-          <a href="/reports" className="nav-link active">Reportes</a>
+          {!hideAdvancedTabs && (
+            <>
+              <a href="/machine-balance" className="nav-link">Cuadre por Máquina</a>
+              <a href="/casino-balance" className="nav-link">Cuadre General</a>
+              <a href="/reports" className="nav-link active">Reportes</a>
+            </>
+          )}
           <a href="/profile" className="nav-link">Mi Perfil</a>
           <button onClick={handleLogout} className="logout-btn">Cerrar Sesión</button>
         </nav>
