@@ -1341,6 +1341,13 @@ body {
     box-shadow: 0 4px 12px rgba(244, 208, 63, 0.4);
 }
 
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    color: var(--color-gold);
+    filter: invert(60%) sepia(50%) saturate(600%) hue-rotate(10deg);
+    opacity: 1;
+}
+
 
 /* -------------------------------------- */
 /* --- Media Query para Responsive --- */
