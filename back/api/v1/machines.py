@@ -95,7 +95,7 @@ class SerialAction(BaseModel):
     motivo: Optional[str] = None
 
 @router.post("/", response_model=MachineOut, status_code=201)
-def registrar_maquina(machine: MachineIn, actor: str = "system", user=Depends(verificar_rol(["admin"]))):
+def registrar_maquina(machine: MachineIn, actor: str = "system", user=Depends(verificar_rol(["admin", "soporte"]))):
     # Validar unicidad de serial
     if repo.existe_serial(machine.serial):
         raise HTTPException(
@@ -209,7 +209,7 @@ def obtener_maquina(machine_id: int):
 
 
 @router.put("/{machine_id}", response_model=MachineOut)
-def actualizar_maquina_endpoint(machine_id: int, cambios: MachineUpdate, actor: str = "system", user=Depends(verificar_rol(["admin"]))):
+def actualizar_maquina_endpoint(machine_id: int, cambios: MachineUpdate, actor: str = "system", user=Depends(verificar_rol(["admin", "soporte"]))):
     """
     Actualiza una máquina existente.
     
@@ -267,7 +267,7 @@ def actualizar_maquina_endpoint(machine_id: int, cambios: MachineUpdate, actor: 
 
 
 
-def inactivate_machine(payload: SerialAction, user=Depends(verificar_rol(["admin"]))):
+def inactivate_machine(payload: SerialAction, user=Depends(verificar_rol(["admin","soporte"]))):
     try:
         result = inactivar_maquina_por_serial(
             payload.serial, actor=payload.actor or "system", motivo=payload.motivo
@@ -278,7 +278,7 @@ def inactivate_machine(payload: SerialAction, user=Depends(verificar_rol(["admin
 
 
 @router.post("/activate")
-def activate_machine(payload: SerialAction, user=Depends(verificar_rol(["admin"]))):
+def activate_machine(payload: SerialAction, user=Depends(verificar_rol(["admin","soporte"]))):
     try:
         result = activar_maquina_por_serial(payload.serial, actor=payload.actor or "system", note=payload.motivo)
         return result
