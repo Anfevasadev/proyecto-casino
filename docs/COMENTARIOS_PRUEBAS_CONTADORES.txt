@@ -1,0 +1,357 @@
+================================================================================
+    REGISTRO DE PRUEBAS - MÓDULO DE CONTADORES
+    Proyecto: Sistema de Gestión de Casinos
+    Módulo: Contadores (Módulo 3)
+================================================================================
+
+INSTRUCCIONES:
+--------------
+Este archivo está destinado para registrar las pruebas realizadas por el equipo
+de desarrollo. Cada persona que realice pruebas debe completar una entrada con
+la plantilla proporcionada a continuación.
+
+
+================================================================================
+PLANTILLA DE REGISTRO DE PRUEBA
+================================================================================
+
+---[INICIO DE PRUEBA]-----------------------------------------------------------
+
+INFORMACIÓN GENERAL
+-------------------
+Probador: [Nombre completo del probador]
+Fecha: [DD/MM/YYYY]
+Hora Inicio: [HH:MM]
+Hora Fin: [HH:MM]
+Entorno: [Local / Desarrollo / Producción]
+
+
+CONFIGURACIÓN DEL ENTORNO
+--------------------------
+Backend Corriendo: [SÍ / NO]
+    - URL: [http://localhost:8000]
+    - Versión: [Indicar versión o commit hash]
+
+Frontend Corriendo: [SÍ / NO]
+    - URL: [http://localhost:5173]
+    - Versión: [Indicar versión o commit hash]
+
+Base de Datos: [CSV / Otro]
+    - Ubicación: [data/counters.csv]
+
+
+PRUEBAS AUTOMÁTICAS (pytest)
+-----------------------------
+Comando ejecutado: [python -m pytest back/tests/test_counters_module.py -v]
+Resultado: [X pasadas, Y fallidas, Z saltadas]
+Tiempo de ejecución: [X segundos]
+
+Observaciones:
+[Describir cualquier error o comportamiento inesperado]
+
+
+PRUEBAS DE API (Postman/Thunder Client)
+----------------------------------------
+
+1. GET /machines-by-casino/{casino_id}
+   Estado: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+   Status Code obtenido: [200 / 404 / Otro]
+   Observaciones:
+   [Comentarios sobre la prueba]
+
+2. POST /counters (Crear contador)
+   Estado: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+   Status Code obtenido: [201 / 400 / 404 / Otro]
+   Datos de prueba:
+   - Casino ID: [X]
+   - Machine ID: [Y]
+   - IN Amount: [XXXXX.XX]
+   - OUT Amount: [XXXXX.XX]
+   Observaciones:
+   [Comentarios sobre la prueba]
+
+3. GET /counters/{id} (Consultar por ID)
+   Estado: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+   Status Code obtenido: [200 / 404 / Otro]
+   Observaciones:
+   [Comentarios sobre la prueba]
+
+4. PUT /modificacion/{casino_id}/{fecha} (Actualización batch)
+   Estado: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+   Status Code obtenido: [200 / 400 / 403 / 404 / Otro]
+   Cantidad de contadores actualizados: [X]
+   Observaciones:
+   [Comentarios sobre la prueba]
+
+5. GET /reportes/consulta (Consulta para reportes)
+   Estado: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+   Status Code obtenido: [200 / 400 / Otro]
+   Rango de fechas: [YYYY-MM-DD a YYYY-MM-DD]
+   Registros obtenidos: [X]
+   Observaciones:
+   [Comentarios sobre la prueba]
+
+
+VALIDACIONES PROBADAS
+----------------------
+□ Casino inexistente retorna 404
+□ Máquina inexistente retorna 404
+□ Montos negativos retornan 422
+□ Máquina de otro casino retorna 400
+□ Rango de fechas inválido retorna 400
+□ Casino inactivo retorna 403
+
+Marcar con [✓] las validaciones que funcionaron correctamente
+Marcar con [✗] las validaciones que fallaron
+Dejar en blanco [□] si no se probó
+
+
+PRUEBAS DE FRONTEND
+-------------------
+Login: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+Listado de casinos: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+Listado de máquinas: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+Creación de contador: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+Visualización de contadores: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+Modificación batch: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+Generación de reportes: [✓ ÉXITO / ✗ ERROR / ⊘ NO PROBADO]
+
+Observaciones generales del frontend:
+[Comentarios sobre usabilidad, bugs visuales, rendimiento, etc.]
+
+
+VERIFICACIÓN DE DATOS
+----------------------
+Datos persistidos en CSV: [✓ SÍ / ✗ NO]
+Formato correcto: [✓ SÍ / ✗ NO]
+Auditoría funcionando (created_by, updated_by): [✓ SÍ / ✗ NO]
+Relaciones casino-máquina respetadas: [✓ SÍ / ✗ NO]
+
+
+ERRORES ENCONTRADOS
+-------------------
+[Listar todos los errores encontrados durante las pruebas]
+
+Error #1:
+Descripción: [Descripción detallada del error]
+Pasos para reproducir:
+1. [Paso 1]
+2. [Paso 2]
+3. [Paso 3]
+Severidad: [CRÍTICO / ALTO / MEDIO / BAJO]
+Screenshot/Log: [Adjuntar o describir]
+
+Error #2:
+[Repetir formato según sea necesario]
+
+
+SUGERENCIAS DE MEJORA
+---------------------
+[Sugerencias para mejorar el módulo, la UX, el rendimiento, etc.]
+
+1. [Sugerencia 1]
+2. [Sugerencia 2]
+3. [Sugerencia 3]
+
+
+CALIFICACIÓN GENERAL
+--------------------
+Funcionalidad: [1-10]
+Usabilidad: [1-10]
+Rendimiento: [1-10]
+Estabilidad: [1-10]
+
+Calificación General: [1-10]
+
+Comentario final:
+[Comentario general sobre el módulo]
+
+
+FIRMA
+-----
+Nombre: [Nombre del probador]
+Firma: [Firma o iniciales]
+
+---[FIN DE PRUEBA]--------------------------------------------------------------
+
+
+================================================================================
+================================================================================
+                        REGISTROS DE PRUEBAS
+================================================================================
+================================================================================
+
+[A continuación se registran las pruebas realizadas por el equipo]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                            EJEMPLO DE REGISTRO
+================================================================================
+
+---[INICIO DE PRUEBA]-----------------------------------------------------------
+
+INFORMACIÓN GENERAL
+-------------------
+Probador: Juan Pérez García
+Fecha: 26/11/2025
+Hora Inicio: 10:00
+Hora Fin: 11:30
+Entorno: Local
+
+
+CONFIGURACIÓN DEL ENTORNO
+--------------------------
+Backend Corriendo: SÍ
+    - URL: http://localhost:8000
+    - Versión: commit 2af6b3c
+
+Frontend Corriendo: SÍ
+    - URL: http://localhost:5173
+    - Versión: commit 50d8ff6
+
+Base de Datos: CSV
+    - Ubicación: data/counters.csv
+
+
+PRUEBAS AUTOMÁTICAS (pytest)
+-----------------------------
+Comando ejecutado: python -m pytest back/tests/test_counters_module.py -v
+Resultado: 18 pasadas, 0 fallidas, 1 saltadas
+Tiempo de ejecución: 1.57 segundos
+
+Observaciones:
+Todas las pruebas pasaron correctamente. La prueba saltada es porque no hay
+casinos inactivos en los datos de prueba, lo cual es esperado.
+
+
+PRUEBAS DE API (Postman/Thunder Client)
+----------------------------------------
+
+1. GET /machines-by-casino/{casino_id}
+   Estado: ✓ ÉXITO
+   Status Code obtenido: 200
+   Observaciones:
+   Retorna correctamente la lista de máquinas del casino 1. Probé también
+   con casino inexistente (99999) y retornó 404 como esperado.
+
+2. POST /counters (Crear contador)
+   Estado: ✓ ÉXITO
+   Status Code obtenido: 201
+   Datos de prueba:
+   - Casino ID: 1
+   - Machine ID: 1
+   - IN Amount: 15000.50
+   - OUT Amount: 8500.25
+   Observaciones:
+   Se creó correctamente y retornó la información de la máquina incluida.
+
+3. GET /counters/{id} (Consultar por ID)
+   Estado: ✓ ÉXITO
+   Status Code obtenido: 200
+   Observaciones:
+   Funcionó perfectamente con el ID del contador recién creado.
+
+4. PUT /modificacion/{casino_id}/{fecha} (Actualización batch)
+   Estado: ✓ ÉXITO
+   Status Code obtenido: 200
+   Cantidad de contadores actualizados: 2
+   Observaciones:
+   Actualicé 2 contadores al mismo tiempo y ambos se modificaron correctamente.
+
+5. GET /reportes/consulta (Consulta para reportes)
+   Estado: ✓ ÉXITO
+   Status Code obtenido: 200
+   Rango de fechas: 2025-11-26 a 2025-11-26
+   Registros obtenidos: 3
+   Observaciones:
+   Retornó todos los contadores del día correctamente filtrados.
+
+
+VALIDACIONES PROBADAS
+----------------------
+[✓] Casino inexistente retorna 404
+[✓] Máquina inexistente retorna 404
+[✓] Montos negativos retornan 422
+[✓] Máquina de otro casino retorna 400
+[✓] Rango de fechas inválido retorna 400
+[□] Casino inactivo retorna 403 - No probado (no hay casinos inactivos)
+
+
+PRUEBAS DE FRONTEND
+-------------------
+Login: ✓ ÉXITO
+Listado de casinos: ✓ ÉXITO
+Listado de máquinas: ✓ ÉXITO
+Creación de contador: ✓ ÉXITO
+Visualización de contadores: ✓ ÉXITO
+Modificación batch: ⊘ NO PROBADO
+Generación de reportes: ⊘ NO PROBADO
+
+Observaciones generales del frontend:
+La interfaz es clara y fácil de usar. Los formularios tienen buena validación.
+No encontré problemas de rendimiento.
+
+
+VERIFICACIÓN DE DATOS
+----------------------
+Datos persistidos en CSV: ✓ SÍ
+Formato correcto: ✓ SÍ
+Auditoría funcionando (created_by, updated_by): ✓ SÍ
+Relaciones casino-máquina respetadas: ✓ SÍ
+
+
+ERRORES ENCONTRADOS
+-------------------
+Ningún error crítico encontrado. Todo funcionó según lo esperado.
+
+
+SUGERENCIAS DE MEJORA
+---------------------
+1. Agregar paginación en el listado de contadores cuando hay muchos registros
+2. Implementar búsqueda/filtrado por rango de fechas en el frontend
+3. Agregar confirmación antes de actualizar contadores en batch
+
+
+CALIFICACIÓN GENERAL
+--------------------
+Funcionalidad: 10
+Usabilidad: 9
+Rendimiento: 10
+Estabilidad: 10
+
+Calificación General: 9.5
+
+Comentario final:
+Excelente módulo, muy completo y bien estructurado. Las validaciones funcionan
+perfectamente y los datos se persisten correctamente. Recomiendo su aprobación.
+
+
+FIRMA
+-----
+Nombre: Juan Pérez García
+Firma: JPG
+
+---[FIN DE PRUEBA]--------------------------------------------------------------
+
+================================================================================
+                        FIN DEL DOCUMENTO
+================================================================================

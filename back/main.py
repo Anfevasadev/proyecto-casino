@@ -33,3 +33,65 @@
 #   - Si en el futuro se agregan "eventos" de inicio (startup) para preparar rutas
 #     u otro setup, documentarlo aquí con claridad (pero mantenerlo mínimo por ser académico).
 # ----------------------------------------
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .api.router import api_router  # Router principal de la API
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request
+from back.api.deps import oauth2_scheme, decodificar_jwt
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Intentamos decodificar token Bearer si viene
+        auth = request.headers.get("Authorization")
+        if auth and auth.lower().startswith("bearer "):
+            token = auth.split(" ", 1)[1].strip()
+            try:
+                payload = decodificar_jwt(token)
+                # Dejar disponible info en request.state.user
+                request.state.user = payload
+            except Exception:
+                request.state.user = None
+        else:
+            request.state.user = None
+
+        response = await call_next(request)
+        return response
+
+def create_app() -> FastAPI:
+    """
+    Factory para crear y configurar la aplicación FastAPI.
+
+    Returns
+    -------
+    FastAPI
+        Aplicación configurada lista para ejecutar con Uvicorn.
+    """
+    app = FastAPI(title="Demo Cuadre Casino", version="0.1.0")
+
+    # Configuración CORS para permitir peticiones desde el front
+    allowed_origins = ["*"]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Endpoint de salud simple
+    @app.get("/health")
+    def health() -> dict[str, str]:
+        """Simple health check endpoint."""
+        return {"status": "ok"}
+
+    # Incluir el router principal bajo /api
+    app.include_router(api_router, prefix="/api")
+    # Agregar middleware de autenticación (no obliga, facilita acceso al request)
+    app.add_middleware(AuthMiddleware)
+    return app
+
+# Instancia de aplicación para Uvicorn
+app = create_app()

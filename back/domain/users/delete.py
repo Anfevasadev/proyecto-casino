@@ -25,3 +25,42 @@
 # Errores:
 #   - NotFoundError si no existe.
 # -------------------------------------------
+from typing import Dict, Any
+
+
+class NotFoundError(Exception):
+    pass
+
+
+def inactivar_usuario(user_id: int, clock, repo, actor: str) -> Dict[str, Any]:
+    """
+    Inactiva un usuario (borrado lógico).
+    
+    Args:
+        user_id: ID del usuario a inactivar
+        clock: Función que retorna timestamp actual
+        repo: Repositorio de usuarios
+        actor: Usuario que realiza la acción
+        
+    Returns:
+        Dict con {"deleted": True, "id": user_id}
+        
+    Raises:
+        NotFoundError: Si el usuario no existe
+    """
+    usuario = repo.get_user_by_id(user_id)
+    if not usuario:
+        raise NotFoundError(f"Usuario id={user_id} no existe")
+    
+    cambios = {
+        "is_active": False,
+        "is_deleted": True,
+        "updated_at": clock(),
+        "updated_by": actor,
+        "deleted_at": clock(),
+        "deleted_by": actor
+    }
+    
+    repo.update_user_row(user_id, cambios)
+    
+    return {"deleted": True, "id": user_id}

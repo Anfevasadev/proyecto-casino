@@ -32,3 +32,52 @@
 #   - Username duplicado -> lanzar excepción de dominio (p.ej., ValueError o DomainError).
 #   - Role inválido -> excepción.
 # -------------------------------------------
+from datetime import datetime
+from back.storage import users_repo
+from back.models.users import UserIn
+
+ROLES_PERMITIDOS = {"admin", "operador", "soporte"}
+
+def _clock() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def create_user(user_in: UserIn, created_by: str = "system"):
+    # Validar rol (por si viene manipulado externamente)
+    if user_in.role.value not in ROLES_PERMITIDOS:
+        raise ValueError("Rol inválido; use admin|operador|soporte")
+
+    if users_repo.username_exists(user_in.username):
+        raise ValueError("El username ya está en uso")
+
+    # Hash password before persisting
+    from passlib.context import CryptContext
+
+    pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    hashed = pwd.hash(user_in.password)
+
+    new_id = users_repo.next_id()
+    now = _clock()
+    row = {
+        "id": new_id,
+        "username": user_in.username,
+        "password": hashed,
+        "role": user_in.role.value,
+        "is_active": user_in.is_active,
+        "is_deleted": False,
+        "created_at": now,
+        "created_by": created_by,
+        "updated_at": None,
+        "updated_by": None,
+        "deleted_at": None,
+        "deleted_by": None,
+    }
+
+    users_repo.insert_user(row)
+
+    return {
+        "id": new_id,
+        "username": row["username"],
+        "role": row["role"],
+        "is_active": row["is_active"],
+    }

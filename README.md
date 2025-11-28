@@ -33,6 +33,9 @@ source .venv/bin/activate     # Windows: .venv\Scripts\activate
 # instalar dependencias
 pip install -r requirements.txt
 
+# instalar upgrade del sistema
+pip install --upgrade pip
+
 # generar CSVs (si hace falta)
 python init_csvs.py
 ```
@@ -92,3 +95,97 @@ pytest
 * Si no sabes dónde poner algo: **API** (rutas), **domain** (reglas/operaciones), **storage** (CSV/pandas).
 * Mantén funciones pequeñas y comentadas.
 * Si un archivo te abruma, divídelo (pero evita sobre-arquitectura).
+
+
+##  LOGIN
+
+El proceso de autenticación o login se realiza mediante el siguiente endpoint:
+
+### POST /api/v1/login
+
+Este endpoint recibe las credenciales o datos del usuario y retorna un token o la información básica si son válidas y el usuario está activo.
+
+|    Campo   | Tipo  |       Descripción       |
+| `username` | `str` | Nombre de usuario.      |
+| `password` | `str` | Contraseña del usuario. |
+
+## Usuarios — Creación
+
+### POST `/api/v1/users`
+
+Permite crear un usuario nuevo.
+
+- Body (`UserIn`):
+  - `username` (str, obligatorio, único, trim)
+  - `password` (str, obligatorio)
+  - `role` (str, opcional, default `operador`; valores permitidos: `admin`, `operador`, `soporte`)
+  - `is_active` (bool, default true)
+
+- Validaciones:
+  - Username único (400 si ya existe)
+  - Role dentro del conjunto permitido (400 si inválido)
+  - Password no vacía
+
+- Respuesta (201, `UserOut`):
+  - `{ id, username, role, is_active }`
+  - Nunca expone `password`.
+
+Ejemplo:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/users" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "username": "nuevo_user",
+        "password": "secreta",
+        "role": "operador"
+      }'
+```
+
+Respuesta exitosa:
+
+```json
+{
+  "id": 7,
+  "username": "nuevo_user",
+## Usuarios — Actualización
+
+### PUT `/api/v1/users/{user_id}`
+
+- Entrada (`JSON`, modelo `UserUpdate`):
+  - `username` (str, opcional; si cambia debe ser único)
+  - `password` (str, opcional)
+  - `role` (str, opcional; uno de: `admin`, `operador`, `soporte`)
+  - `is_active` (bool, opcional)
+
+- Reglas y validaciones:
+  - El usuario debe existir (404 si no existe).
+  - Si cambia `username`, no debe existir otro usuario con ese mismo `username` (400 si duplica).
+  - Si se envía `role`, debe pertenecer a `{admin, operador, soporte}` (400 si inválido).
+  - Se registran `updated_at` y `updated_by` automáticamente (auditoría interna).
+
+- Respuesta (200, `UserOut`):
+  - `id` (int), `username` (str), `role` (str), `is_active` (bool)
+  - Nunca expone `password`.
+
+Ejemplo de petición:
+
+```bash
+curl -X PUT "http://127.0.0.1:8000/api/v1/users/2" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "role": "operador",
+        "is_active": true
+      }'
+```
+
+Ejemplo de respuesta:
+
+```json
+{
+  "id": 2,
+  "username": "user1",
+  "role": "operador",
+  "is_active": true
+}
+```
