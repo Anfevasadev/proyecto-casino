@@ -19,25 +19,52 @@ export default function CasinosPage() {
   const [error, setError] = useState(""); // Manejo de errores de API
   const [showCreateForm, setShowCreateForm] = useState(false); // Control modal de creación
   const [editingCasino, setEditingCasino] = useState(null); // Casino seleccionado para editar
+  const [sessionUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch (err) {
+      console.warn("No fue posible parsear el usuario", err);
+      return null;
+    }
+  });
+  const isAdmin = sessionUser?.role === "admin" || sessionUser?.role === "soporte";
 
   const fetchCasinos = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      // Petición GET al backend con filtro only_active
-      const response = await client.get('/places/casino', { params: { only_active: true, offset: 0 } })
-      const { data } = response;
-      setCasinos(Array.isArray(data) ? data : []);
+      const baseParams = { offset: 0 };
+      let merged = [];
+      if (isAdmin) {
+        const [activeResp, inactiveResp] = await Promise.all([
+          client.get("/places/casino", { params: { ...baseParams, only_active: true } }),
+          client.get("/places/casino", { params: { ...baseParams, only_active: false } }),
+        ]);
+        const listActive = Array.isArray(activeResp?.data) ? activeResp.data : [];
+        const listInactive = Array.isArray(inactiveResp?.data) ? inactiveResp.data : [];
+        const unique = new Map();
+        [...listActive, ...listInactive].forEach((casino) => {
+          if (casino?.id == null) return;
+          unique.set(casino.id, casino);
+        });
+        merged = Array.from(unique.values());
+      } else {
+        const response = await client.get("/places/casino", {
+          params: { ...baseParams, only_active: true },
+        });
+        merged = Array.isArray(response?.data) ? response.data : [];
+      }
+      setCasinos(merged);
     } catch (err) {
       setError(err.message ?? "No fue posible obtener los casinos");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
-    fetchCasinos(); // Se obtiene la lista al montar el componente
-  }, []);
+    fetchCasinos(); // Se obtiene la lista al montar o si cambia el rol
+  }, [fetchCasinos]);
 
   const handleSearch = (event) => {
     setQuery(event.target.value); // Actualiza el término de búsqueda
@@ -111,12 +138,12 @@ export default function CasinosPage() {
           }}>
             Encuentra tu Casino Ideal
           </h1>
-          <button 
+          {isAdmin && <button 
             onClick={() => setShowCreateForm(true)}
             className="create-casino-btn"
           >
             + Crear Casino
-          </button>
+          </button>}
         </div>
 
         {/* Campo de búsqueda con estilos de casino */}
@@ -160,6 +187,7 @@ export default function CasinosPage() {
               key={casino.id} 
               casino={casino}
               onEdit={handleEditCasino}
+              isAdmin={isAdmin}
             />
           ))}
         </div>

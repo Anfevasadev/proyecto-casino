@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 
-export default function CasinoCard({ casino, onEdit }) {
+export default function CasinoCard({ casino, onEdit, isAdmin }) {
   const navigate = useNavigate();
 
   if (!casino) {
@@ -54,14 +54,14 @@ export default function CasinoCard({ casino, onEdit }) {
         >
           Ver máquinas
         </button>
-        <button
+        {isAdmin && <button
           type="button"
           className="casino-card-edit-btn"
           onClick={() => onEdit?.(casino)}
           title="Editar casino"
         >
           ✏️
-        </button>
+        </button>}
       </div>
     </article>
   );
