@@ -295,7 +295,6 @@ def generar_reporte_con_filtros(
         casino_id: ID del casino (opcional)
         marca: Marca de máquina (opcional)
         modelo: Modelo de máquina (opcional)
-        ciudad: Ciudad (opcional)
         tipo_reporte: Tipo de reporte ("detallado", "consolidado", "resumen")
         
     Returns:
@@ -382,7 +381,6 @@ def generar_reporte_con_filtros(
         casino_info = {
             'casino_id': place_id,
             'casino_nombre': place.get('nombre'),
-            'ciudad': place.get('ciudad', 'N/A'),
             'total_machines': len(filtered_machines)
         }
         
@@ -417,7 +415,6 @@ def generar_reporte_con_filtros(
                     all_machines_summary.append({
                         'casino_id': place_id,
                         'casino_nombre': place.get('nombre'),
-                        'ciudad': place.get('ciudad', 'N/A'),
                         'machine_id': machine_id,
                         'machine_marca': machine.get('marca'),
                         'machine_modelo': machine.get('modelo'),
@@ -443,7 +440,6 @@ def generar_reporte_con_filtros(
                     all_machines_summary.append({
                         'casino_id': place_id,
                         'casino_nombre': place.get('nombre'),
-                        'ciudad': place.get('ciudad', 'N/A'),
                         'machine_id': machine_id,
                         'machine_marca': machine.get('marca'),
                         'machine_modelo': machine.get('modelo'),
@@ -479,8 +475,7 @@ def generar_reporte_con_filtros(
         'filters_applied': {
             'casino_id': casino_id,
             'marca': marca,
-            'modelo': modelo,
-            'ciudad': ciudad
+            'modelo': modelo
         },
         'tipo_reporte': tipo_reporte,
         'casinos_included': casinos_info,

@@ -31,7 +31,7 @@ export default function ReportsPage() {
   const [machines, setMachines] = useState([])
 
   const [selectedCasinoId, setSelectedCasinoId] = useState('')
-  const [filters, setFilters] = useState({ marca: '', modelo: '', ciudad: '' })
+  const [filters, setFilters] = useState({ marca: '', modelo: '' })
   const [reportType, setReportType] = useState('detallado')
   const [periodStart, setPeriodStart] = useState(start)
   const [periodEnd, setPeriodEnd] = useState(end)
@@ -95,7 +95,6 @@ export default function ReportsPage() {
     if (selectedCasinoId) params.casino_id = Number(selectedCasinoId)
     if (filters.marca.trim()) params.marca = filters.marca.trim()
     if (filters.modelo.trim()) params.modelo = filters.modelo.trim()
-    if (filters.ciudad.trim()) params.ciudad = filters.ciudad.trim()
     return params
   }
 
@@ -296,18 +295,6 @@ export default function ReportsPage() {
               </div>
 
               <div className="form-group">
-                <label>Ciudad</label>
-                <input
-                  type="text"
-                  name="ciudad"
-                  className="form-input"
-                  value={filters.ciudad}
-                  onChange={handleFilterChange}
-                  placeholder="Medellín, Bogotá..."
-                />
-              </div>
-
-              <div className="form-group">
                 <label>Tipo de reporte</label>
                 <select
                   className="form-input"
@@ -445,7 +432,6 @@ export default function ReportsPage() {
                 <thead>
                   <tr>
                     <th>Casino</th>
-                    <th>Ciudad</th>
                     <th>Máquinas filtradas</th>
                   </tr>
                 </thead>
@@ -453,7 +439,6 @@ export default function ReportsPage() {
                   {reportData.casinos_included.map((casino) => (
                     <tr key={casino.casino_id}>
                       <td>{casino.casino_nombre}</td>
-                      <td>{casino.ciudad}</td>
                       <td>{casino.total_machines}</td>
                     </tr>
                   ))}

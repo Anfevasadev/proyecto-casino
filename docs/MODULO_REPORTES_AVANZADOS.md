@@ -15,7 +15,6 @@ El módulo de reportes avanzados proporciona herramientas completas para el aná
 - **Por Casino**: Filtra por un casino específico usando `casino_id`
 - **Por Marca**: Filtra máquinas de una marca específica (ej: IGT, Aristocrat)
 - **Por Modelo**: Filtra máquinas de un modelo específico (ej: Sphinx, Buffalo)
-- **Por Ciudad**: Filtra todos los casinos de una ciudad específica
 - **Por Rango de Fechas**: `period_start` y `period_end` (YYYY-MM-DD)
 
 #### Tipos de Reporte
@@ -44,7 +43,7 @@ Todos los reportes incluyen:
 
 - **Contadores**: IN, OUT, JACKPOT, BILLETERO
 - **Utilidades**: Cálculo neto (IN - (OUT + JACKPOT))
-- **Información de Casinos**: Nombre, ciudad, código
+- **Información de Casinos**: Nombre y código
 - **Información de Máquinas**: Marca, modelo, serial, asset
 - **Estadísticas**: Total de máquinas, procesadas, con/sin datos
 
@@ -73,7 +72,6 @@ period_end: string (requerido) - Fecha final (YYYY-MM-DD)
 casino_id: integer (opcional) - ID del casino
 marca: string (opcional) - Marca de máquina
 modelo: string (opcional) - Modelo de máquina
-ciudad: string (opcional) - Ciudad del casino
 tipo_reporte: string (opcional) - Tipo: detallado, consolidado, resumen
 ```
 
@@ -82,8 +80,8 @@ tipo_reporte: string (opcional) - Tipo: detallado, consolidado, resumen
 # Reporte detallado de un casino específico
 GET /api/v1/balances/reportes/filtros?period_start=2025-01-01&period_end=2025-01-31&casino_id=1&tipo_reporte=detallado
 
-# Reporte de todas las máquinas IGT en la ciudad de Medellín
-GET /api/v1/balances/reportes/filtros?period_start=2025-01-01&period_end=2025-01-31&ciudad=Medellin&marca=IGT
+# Reporte de todas las máquinas IGT sin filtrar por casino
+GET /api/v1/balances/reportes/filtros?period_start=2025-01-01&period_end=2025-01-31&marca=IGT
 
 # Reporte consolidado de máquinas modelo Buffalo
 GET /api/v1/balances/reportes/filtros?period_start=2025-01-01&period_end=2025-01-31&modelo=Buffalo&tipo_reporte=consolidado
@@ -97,15 +95,13 @@ GET /api/v1/balances/reportes/filtros?period_start=2025-01-01&period_end=2025-01
   "filters_applied": {
     "casino_id": 1,
     "marca": null,
-    "modelo": null,
-    "ciudad": null
+    "modelo": null
   },
   "tipo_reporte": "detallado",
   "casinos_included": [
     {
       "casino_id": 1,
       "casino_nombre": "Casino Principal",
-      "ciudad": "Medellín",
       "total_machines": 50
     }
   ],
@@ -113,7 +109,6 @@ GET /api/v1/balances/reportes/filtros?period_start=2025-01-01&period_end=2025-01
     {
       "casino_id": 1,
       "casino_nombre": "Casino Principal",
-      "ciudad": "Medellín",
       "machine_id": 1,
       "machine_marca": "IGT",
       "machine_modelo": "Sphinx",
@@ -192,7 +187,7 @@ GET /api/v1/balances/reportes/filtros/pdf?period_start=2025-01-01&period_end=202
 
 **Ejemplo de uso**:
 ```bash
-GET /api/v1/balances/reportes/filtros/excel?period_start=2025-01-01&period_end=2025-01-31&ciudad=Medellin&marca=IGT
+GET /api/v1/balances/reportes/filtros/excel?period_start=2025-01-01&period_end=2025-01-31&marca=IGT
 ```
 
 **Respuesta**: Archivo Excel (.xlsx) descargable
@@ -241,10 +236,10 @@ GET /api/v1/balances/reportes/filtros?period_start=2025-01-01&period_end=2025-01
 GET /api/v1/balances/reportes/filtros?period_start=2025-01-01&period_end=2025-01-31&casino_id=1&tipo_reporte=consolidado
 ```
 
-### 3. Reporte de todos los casinos de Medellín
+### 3. Reporte consolidado de todos los casinos activos
 
 ```bash
-GET /api/v1/balances/reportes/filtros?period_start=2025-01-01&period_end=2025-01-31&ciudad=Medellin
+GET /api/v1/balances/reportes/filtros?period_start=2025-01-01&period_end=2025-01-31
 ```
 
 ### 4. Exportar a PDF todas las máquinas modelo Buffalo
@@ -286,56 +281,6 @@ Donde:
 
 ---
 
-## Cambios Realizados en el Sistema
-
-### 1. Modelo de Datos
-
-#### Campo Agregado a Places (Casinos)
-```python
-# back/models/places.py
-class PlaceIn(BaseModel):
-    nombre: str
-    direccion: str
-    codigo_casino: str
-    ciudad: str  # ← NUEVO CAMPO
-```
-
-### 2. Base de Datos (CSV)
-
-#### places.csv
-```csv
-id,nombre,direccion,codigo_casino,ciudad,estado,created_at,created_by,updated_at,updated_by
-1,Casino Principal,Calle 1,CASP01,Medellín,True,2025-01-01,admin,,
-```
-
-### 3. Nuevos Modelos
-
-#### ReportFilters
-```python
-# back/models/balances.py
-class ReportFilters(BaseModel):
-    marca: Optional[str]
-    modelo: Optional[str]
-    ciudad: Optional[str]
-    casino_id: Optional[int]
-    tipo_reporte: Optional[str] = "detallado"
-```
-
-### 4. Nuevas Funciones de Dominio
-
-```python
-# back/domain/balances/report.py
-def generar_reporte_con_filtros(
-    period_start, period_end,
-    counters_repo, machines_repo, places_repo,
-    clock, actor,
-    casino_id=None, marca=None, modelo=None, ciudad=None,
-    tipo_reporte="detallado"
-) -> Dict[str, Any]
-```
-
----
-
 ## Testing
 
 ### Pruebas Recomendadas
@@ -343,13 +288,12 @@ def generar_reporte_con_filtros(
 1. **Validar filtros individuales**:
    - Solo marca
    - Solo modelo
-   - Solo ciudad
    - Solo casino_id
 
 2. **Validar combinaciones de filtros**:
-   - Marca + Ciudad
-   - Modelo + Casino
-   - Marca + Modelo + Ciudad
+  - Marca + Modelo
+  - Modelo + Casino
+  - Marca + Modelo + Casino
 
 3. **Validar tipos de reporte**:
    - Detallado
@@ -362,7 +306,7 @@ def generar_reporte_con_filtros(
 
 5. **Casos extremos**:
    - Sin máquinas en el periodo
-   - Sin casinos en la ciudad
+  - Sin casinos activos
    - Marca/modelo no existente
 
 ---

@@ -201,7 +201,7 @@ class CasinoDetailedReport(BaseModel):
 class ReportFilters(BaseModel):
     """
     Filtros avanzados para generación de reportes personalizados.
-    Permite filtrar por marca, modelo, ciudad y otros criterios.
+    Permite filtrar por marca, modelo y otros criterios.
     """
     # Filtros de máquinas
     marca: Optional[str] = Field(

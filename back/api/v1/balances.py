@@ -648,7 +648,7 @@ def exportar_reporte_excel(
     "/reportes/filtros",
     status_code=status.HTTP_200_OK,
     summary="Generar reporte con filtros avanzados",
-    description="Genera reportes personalizados con filtros por marca, modelo, ciudad y tipo de reporte"
+    description="Genera reportes personalizados con filtros por marca, modelo y tipo de reporte"
 )
 def generar_reporte_filtros(
     period_start: str = Query(..., description="Fecha inicial (YYYY-MM-DD)"),
