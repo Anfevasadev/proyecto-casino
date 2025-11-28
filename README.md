@@ -24,32 +24,49 @@ Aplicación para gestionar **máquinas de casino**, registrar **contadores** (IN
 - Python 3.10+ (recomendado)
 - `pip` para instalar dependencias
 
-## 3) Instalación
+## 3) Montaje en GitHub Codespaces
+> Nota: recuerda ejecutar el backend y el frontend en terminales distintas. Esto mantiene logs independientes y evita interferencias al exponer puertos.
+
+
+### Backend (primer arranque)
 ```bash
-# (opcional) crear entorno virtual
 python -m venv .venv
-source .venv/bin/activate     # Windows: .venv\Scripts\activate
-
-# instalar dependencias
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# instalar upgrade del sistema
-pip install --upgrade pip
-
-# generar CSVs (si hace falta)
-python init_csvs.py
-```
-
-## 4) Ejecutar la API
-
-```bash
 uvicorn back.main:app --reload
 ```
 
-* Healthcheck: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
-* API v1: [http://127.0.0.1:8000/api/v1](http://127.0.0.1:8000/api/v1)
+### Backend (ejecuciones posteriores)
+```bash
+source .venv/bin/activate
+uvicorn back.main:app --reload
+```
 
-> **Hora local**: las fechas/horas se manejan en formato `YYYY-MM-DD HH:MM:SS` en **hora local**.
+### Frontend (primer arranque)
+```bash
+cd front
+npm install
+npm run dev
+```
+
+### Frontend (ejecuciones posteriores)
+```bash
+cd front
+npm run dev
+```
+
+### Exposición de puertos
+En la pestaña **Puertos** del Codespace, ubica los puertos `8000` y `5173`, da clic derecho y selecciona **Cambiar visibilidad a Público**.
+
+### Configurar baseURL del front
+Edita `front/src/api/client.js` (línea `baseURL`) con la URL pública del backend de tu Codespace, por ejemplo:
+
+```javascript
+const client = axios.create({
+  baseURL: 'https://<tu-codespace>-8000.app.github.dev/api/v1',
+  // ...
+})
+```
 
 ## 5) Estructura (resumen)
 
@@ -189,3 +206,7 @@ Ejemplo de respuesta:
   "is_active": true
 }
 ```
+
+
+
+
