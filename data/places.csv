@@ -1,6 +1,8 @@
 id,nombre,direccion,codigo_casino,estado,created_at,created_by,updated_at,updated_by
 1,CASINO_ITM,SI ALGUN DIA,1,True,2025-11-25 00:51:54,admin,2025-11-26 05:11:00,system
 2,castillo,CARRERANOSE-CALLENOSE,2,True,2025-11-25 01:32:02,admin,,
-3,Casino para borrar,Aquí estará el casino,CAS1,False,2025-11-26 05:30:59,system,2025-11-26 05:31:16,system
-4,Casino para borrar,sdsdsdsdsddssddsds,CAS2,False,2025-11-26 05:31:44,system,2025-11-26 05:32:16,system
-5,Casino para borrar,weweewewewewee,CAS3,True,2025-11-26 06:25:11,system,,
+3,Casino para borrar,Aquí estará el casino,CAS1,True,2025-11-26 05:30:59,system,2025-11-28 04:01:30,system
+4,Casino borrado,Dirección editada,CAS2,False,2025-11-26 05:31:44,system,2025-11-28 04:03:10,system
+5,Casino de prueba,Calle -- # -- a,CAS3,True,2025-11-26 06:25:11,system,2025-11-28 03:17:25,system
+6,Casinito,Dirección para llegar,CAS4,False,2025-11-28 04:04:34,system,2025-11-28 04:04:41,system
+7,Casino nuevo de soporte,Direccion completa para llegar,CAS5,False,2025-11-28 04:17:23,system,2025-11-28 04:17:44,system

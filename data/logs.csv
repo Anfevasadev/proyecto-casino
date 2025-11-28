@@ -32,3 +32,5 @@ timestamp,action,machine_id,serial,inactivation_token,motivo,actor,note
 2025-11-25 01:55:13,activate_machine,2,12345,,reactivacion_manual,admin,si
 2025-11-25 02:41:37,inactivate_machine,4,string,84818386a5024aedaae46c1f18305cf1,string,system,
 2025-11-26 06:29:13,inactivate_machine,6,asasss,9b499ba951ea4bc086bb9bed2808e425,Inactivación manual desde front,user1,
+2025-11-28 04:43:08,activate_machine,9,ABC,,reactivacion_manual,soporte,Reactivación manual desde front
+2025-11-28 04:43:24,inactivate_machine,9,ABC,9128ba25593b493eabe76a882c3a884c,Inactivación manual desde front,soporte,
