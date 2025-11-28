@@ -76,7 +76,7 @@ router = APIRouter()
 def inactivar_casino(
 	casino_id: int,
 	actor: str = "system",
-	user=Depends(verificar_rol(["admin"]))
+	user=Depends(verificar_rol(["admin","soporte"]))
 ):
     """
     Marca un casino como inactivo usando la capa de dominio.
@@ -101,7 +101,7 @@ def inactivar_casino(
 def activar_casino(
 	casino_id: int,
 	actor: str = "system",
-	user=Depends(verificar_rol(["admin"]))
+	user=Depends(verificar_rol(["admin","soporte"]))
 ):
     """
     Marca un casino como activo usando la capa de storage
@@ -126,7 +126,7 @@ def activar_casino(
 def crear_casino(
 	place: PlaceIn,
 	actor: str = "system",
-	user=Depends(verificar_rol(["admin"]))
+	user=Depends(verificar_rol(["admin","soporte"]))
 ):
     """
     Crea un nuevo casino usando la capa de dominio.
@@ -160,7 +160,7 @@ def modificar_casino(
 	casino_id: int,
 	body: PlaceUpdate,
 	actor: str = "system",
-	user=Depends(verificar_rol(["admin"]))
+	user=Depends(verificar_rol(["admin","soporte"]))
 ):
     """Actualiza campos editables de un casino (no permite cambiar el código)."""
     try:
