@@ -39,20 +39,20 @@ El proceso de login valida credenciales, genera el token y retorna los datos del
                         │   │ Retornar error 401    │
                         │   └───────────────────────┘
                         ▼
-     ┌──────────────────────────────┐
-     │ Validar contraseña (hash)    │
-     └──────────┬──────────┬────────┘
-                │          │
-               Sí          No
-                │          │
-                ▼          ▼
- ┌────────────────┐   ┌────────────────────┐
- │ Generar token  │   │ Retornar error 401 │
- └───────┬────────┘   └────────────────────┘
-         ▼
-┌───────────────────────────────┐
-│ Retornar token y datos usuario│
-└───────────────────────────────┘
+       ┌──────────────────────────────┐
+       │ Validar contraseña (hash)    │
+       └──────────┬──────────┬────────┘
+                  │          │
+                 Sí          No
+                  │          │
+                  ▼          ▼
+     ┌────────────────┐   ┌────────────────────┐
+     │ Generar token  │   │ Retornar error 401 │
+     └───────┬────────┘   └────────────────────┘
+             ▼
+    ┌───────────────────────────────┐
+    │ Retornar token y datos usuario│
+    └───────────────────────────────┘
 
 
 
@@ -75,14 +75,14 @@ El proceso de login valida credenciales, genera el token y retorna los datos del
              Sí                  No
              │                   │
              ▼                   ▼
-┌────────────────┐ ┌─────────────────────┐
-│ Retornar error │ │ Hash password       │   
-└────────────────┘ │ Guardar usuario     │
-                   └─────────┬───────────┘
-                             ▼
-┌────────────────────────────────┐
-│ Retornar usuario creado OK     │
-└────────────────────────────────┘
+     ┌────────────────┐ ┌─────────────────────┐
+     │ Retornar error │ │ Hash password       │   
+     └────────────────┘ │ Guardar usuario     │
+                        └─────────┬───────────┘
+                                  ▼
+                ┌────────────────────────────────┐
+                │ Retornar usuario creado OK     │
+                └────────────────────────────────┘
 
 
 
@@ -105,24 +105,24 @@ El proceso de login valida credenciales, genera el token y retorna los datos del
              Sí                     No
              │                      │
              ▼                      ▼
-┌────────────────┐ ┌───────────────────────┐
-│ Retornar error │ │ Insertar registro en  │
-└────────────────┘ │ places.csv / DB       │
-                   └─────────┬─────────────┘
-                             ▼
-┌──────────────────────────────────────────┐
-│ Retornar casino creado / datos completos │
-└──────────────────────────────────────────┘
+       ┌────────────────┐ ┌───────────────────────┐
+       │ Retornar error │ │ Insertar registro en  │
+       └────────────────┘ │ places.csv / DB       │
+                          └─────────┬─────────────┘
+                                    ▼
+            ┌──────────────────────────────────────────┐
+            │ Retornar casino creado / datos completos │
+            └──────────────────────────────────────────┘
 
 
 
 ## 4. Flujo de Registro de Máquina
 
-    ┌─────────────────────────────────┐
-    │ Admin selecciona casino y envía │
-    │ datos de máquina                │
-    └─────────────────┬───────────────┘
-                      ▼
+       ┌─────────────────────────────────┐
+       │ Admin selecciona casino y envía │
+       │ datos de máquina                │
+       └─────────────────┬───────────────┘
+                         ▼
                      ┌─────────────────────────────┐
                      │ Validar serial no repetido  │
                      └───────────┬─────────────────┘
