@@ -70,3 +70,217 @@
 #   - El manejo de CSV/pandas se hace en storage/machines_repo.py. Aquí solo orquestamos.
 #   - El borrado lógico es un "toggle" de is_active a false; no se elimina la fila.
 # -------------------------------------------
+# back/api/v1/machines.py
+# back/api/v1/machines.py
+from fastapi import APIRouter, HTTPException, Query, Depends
+from typing import List, Optional
+from pydantic import BaseModel
+
+from back.models.machines import MachineIn, MachineOut, MachineUpdate
+from back.storage.machines_repo import MachinesRepo
+from back.storage.places_repo import PlaceStorage
+from back.domain.machines.inativation import inactivar_maquina_por_serial
+from back.domain.machines.activation import activar_maquina_por_serial
+from back.domain.machines.update import actualizar_maquina, ActualizacionMaquinaError
+
+repo = MachinesRepo()
+repo_places = PlaceStorage()
+from back.api.deps import verificar_rol
+router = APIRouter()
+
+
+class SerialAction(BaseModel):
+    serial: str
+    actor: Optional[str] = "system"
+    motivo: Optional[str] = None
+
+@router.post("/", response_model=MachineOut, status_code=201)
+def registrar_maquina(machine: MachineIn, actor: str = "system", user=Depends(verificar_rol(["admin"]))):
+    # Validar unicidad de serial
+    if repo.existe_serial(machine.serial):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ya existe una máquina con el serial '{machine.serial}'"
+        )
+    
+    # Validar unicidad de asset
+    if repo.existe_asset(machine.asset):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ya existe una máquina con el asset '{machine.asset}'"
+        )
+    
+    # Validar que el casino (place_id) exista
+    if machine.place_id is not None:
+        casino = repo_places.obtener_por_id(machine.place_id)
+        if casino is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Casino con id {machine.place_id} no encontrado"
+            )
+        # Validar que el casino esté activo
+        estado = casino.get("estado")
+        if estado is not None and str(estado).lower() == "false":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Casino con id {machine.place_id} está inactivo"
+            )
+    
+    new_id = repo.next_id()
+
+    row = {
+        "id": new_id,
+        "marca": machine.marca,
+        "modelo": machine.modelo,
+        "serial": machine.serial,
+        "asset": machine.asset,
+        "denominacion": str(machine.denominacion),
+        "estado": str(machine.is_active),
+        "casino_id": machine.place_id
+    }
+
+    repo.add(row, actor)
+
+    return MachineOut(
+        id=new_id,
+        marca=machine.marca,
+        modelo=machine.modelo,
+        serial=machine.serial,
+        asset=machine.asset,
+        denominacion=machine.denominacion,
+        estado=machine.is_active,
+        casino_id=machine.place_id
+    )
+
+
+@router.get("/", response_model=List[MachineOut])
+def listar_maquinas(
+    only_active: Optional[bool] = Query(None),
+    casino_id: Optional[int] = Query(None, description="ID del casino para filtrar máquinas")
+):
+    """
+    Lista máquinas, permitiendo filtrar por casino y estado.
+    """
+    data = repo.listar(only_active=only_active)
+    if casino_id is not None:
+        data = [m for m in data if str(m.get("casino_id")) == str(casino_id)]
+
+    result = []
+    for m in data:
+        try:
+            denominacion_val = float(m["denominacion"]) if m.get("denominacion") else 0.0
+        except (ValueError, TypeError):
+            denominacion_val = 0.0
+        
+        result.append(MachineOut(
+            id=int(m["id"]),
+            marca=m["marca"],
+            modelo=m["modelo"],
+            serial=m["serial"],
+            asset=m["asset"],
+            denominacion=denominacion_val,
+            estado=str(m.get("estado", "True")).lower() == "true",
+            casino_id=int(m["casino_id"])
+        ))
+    return result
+
+
+@router.get("/{machine_id}", response_model=MachineOut)
+def obtener_maquina(machine_id: int):
+    m = repo.get_by_id(machine_id)
+    if not m:
+        raise HTTPException(status_code=404, detail="Machine not found")
+
+    try:
+        denominacion_val = float(m["denominacion"]) if m.get("denominacion") else 0.0
+    except (ValueError, TypeError):
+        denominacion_val = 0.0
+
+    return MachineOut(
+        id=int(m["id"]),
+        marca=m["marca"],
+        modelo=m["modelo"],
+        serial=m["serial"],
+        asset=m["asset"],
+        denominacion=denominacion_val,
+        estado=str(m["estado"]).lower() == "true",
+        casino_id=int(m["casino_id"])
+    )
+
+
+@router.put("/{machine_id}", response_model=MachineOut)
+def actualizar_maquina_endpoint(machine_id: int, cambios: MachineUpdate, actor: str = "system", user=Depends(verificar_rol(["admin"]))):
+    """
+    Actualiza una máquina existente.
+    
+    Restricción importante: La denominación NO puede ser modificada, ya que es la base
+    para los cálculos de conversión de contadores a valores monetarios.
+    
+    Campos que SÍ se pueden modificar: marca, modelo, serial, asset, casino_id.
+    
+    Args:
+        machine_id: ID de la máquina a actualizar.
+        cambios: Objeto con los campos a actualizar.
+        actor: Usuario que realiza la operación.
+    
+    Returns:
+        MachineOut: La máquina actualizada.
+    """
+    try:
+        # Convertir el modelo Pydantic a diccionario, filtrando valores None
+        cambios_dict = cambios.dict(exclude_none=True)
+        
+        # Ejecutar lógica de dominio con validaciones
+        maquina_actualizada = actualizar_maquina(
+            machine_id=machine_id,
+            cambios=cambios_dict,
+            machines_repo=repo,
+            places_repo=repo_places,
+            actor=actor
+        )
+        
+        # Convertir resultado al modelo de salida
+        try:
+            denominacion_val = float(maquina_actualizada["denominacion"]) if maquina_actualizada.get("denominacion") else 0.0
+        except (ValueError, TypeError):
+            denominacion_val = 0.0
+        
+        return MachineOut(
+            id=int(maquina_actualizada["id"]),
+            marca=maquina_actualizada["marca"],
+            modelo=maquina_actualizada["modelo"],
+            serial=maquina_actualizada["serial"],
+            asset=maquina_actualizada["asset"],
+            denominacion=denominacion_val,
+            estado=str(maquina_actualizada.get("estado", "True")).lower() == "true",
+            casino_id=int(maquina_actualizada["casino_id"])
+        )
+    
+    except ActualizacionMaquinaError as e:
+        # Distinguir entre máquina no encontrada y otros errores
+        if "no encontrada" in str(e).lower():
+            raise HTTPException(status_code=404, detail=str(e))
+        else:
+            raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+
+def inactivate_machine(payload: SerialAction, user=Depends(verificar_rol(["admin"]))):
+    try:
+        result = inactivar_maquina_por_serial(
+            payload.serial, actor=payload.actor or "system", motivo=payload.motivo
+        )
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.post("/activate")
+def activate_machine(payload: SerialAction, user=Depends(verificar_rol(["admin"]))):
+    try:
+        result = activar_maquina_por_serial(payload.serial, actor=payload.actor or "system", note=payload.motivo)
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))

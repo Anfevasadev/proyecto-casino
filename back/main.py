@@ -36,20 +36,42 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.router import api_router
+from .api.router import api_router  # Router principal de la API
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request
+from back.api.deps import oauth2_scheme, decodificar_jwt
 
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Intentamos decodificar token Bearer si viene
+        auth = request.headers.get("Authorization")
+        if auth and auth.lower().startswith("bearer "):
+            token = auth.split(" ", 1)[1].strip()
+            try:
+                payload = decodificar_jwt(token)
+                # Dejar disponible info en request.state.user
+                request.state.user = payload
+            except Exception:
+                request.state.user = None
+        else:
+            request.state.user = None
+
+        response = await call_next(request)
+        return response
 
 def create_app() -> FastAPI:
-    """Factory to create and configure the FastAPI application.
+    """
+    Factory para crear y configurar la aplicación FastAPI.
 
     Returns
     -------
     FastAPI
-        Configured application ready to run with Uvicorn.
+        Aplicación configurada lista para ejecutar con Uvicorn.
     """
     app = FastAPI(title="Demo Cuadre Casino", version="0.1.0")
 
-    # Configuración CORS para permitir peticiones desde el front (Vite por defecto en 5173)
+    # Configuración CORS para permitir peticiones desde el front
     allowed_origins = ["*"]
     app.add_middleware(
         CORSMiddleware,
@@ -59,26 +81,17 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Endpoint de salud simple
     @app.get("/health")
     def health() -> dict[str, str]:
-        """Simple health check endpoint.
-
-        Returns a JSON payload indicating the service is running.
-
-        Returns
-        -------
-        dict[str, str]
-            A status payload containing a static message.
-        """
+        """Simple health check endpoint."""
         return {"status": "ok"}
 
-    # Mount the versioned API under /api. Additional routers may be added
-    # inside api/router.py.
+    # Incluir el router principal bajo /api
     app.include_router(api_router, prefix="/api")
+    # Agregar middleware de autenticación (no obliga, facilita acceso al request)
+    app.add_middleware(AuthMiddleware)
     return app
 
-
-# Application instance used by Uvicorn. When running ``uvicorn back.main:app``
-# Uvicorn will import this module and look for an ``app`` attribute. The
-# ``create_app`` factory is called to ensure fresh configuration on import.
+# Instancia de aplicación para Uvicorn
 app = create_app()

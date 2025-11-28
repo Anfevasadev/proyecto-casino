@@ -29,6 +29,12 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 
 import LoginPage from './pages/Login'
 import CasinosPage from './pages/Casinos'
+import CasinoMachinesPage from './pages/CasinoMachines'
+import CountersPage from './pages/Counters'
+import MachineBalancePage from './pages/MachineBalance'
+import CasinoBalancePage from './pages/CasinoBalance'
+import ReportsPage from './pages/Reports'
+import ProfilePage from './pages/Profile'
 
 export default function App() {
   return (
@@ -40,6 +46,18 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         {/* Lista de casinos; ahora visible */}
         <Route path="/casinos" element={<CasinosPage />} />
+        {/* Máquinas de un casino específico */}
+        <Route path="/casinos/:casinoId/machines" element={<CasinoMachinesPage />} />
+        {/* Registro de contadores */}
+        <Route path="/counters" element={<CountersPage />} />
+        {/* Cuadre individual por máquina */}
+        <Route path="/machine-balance" element={<MachineBalancePage />} />
+        {/* Cuadre general por casino */}
+        <Route path="/casino-balance" element={<CasinoBalancePage />} />
+        {/* Reportes avanzados */}
+        <Route path="/reports" element={<ReportsPage />} />
+        {/* Perfil de usuario */}
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </Router>
   )

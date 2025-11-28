@@ -1,1 +1,34 @@
-id,event_type,entity_type,entity_id,description,created_at,created_by
+timestamp,action,machine_id,serial,inactivation_token,motivo,actor,note
+2025-11-23 07:43:44,inactivate_machine,1,SN2001,a5076fe59f5d4a9d8fb271ed7208daeb,string,system,
+2025-11-23 07:44:27,inactivate_machine,3,SN2003,00b57b42dbec4e8899f0e1abb3b12989,string,system,
+2025-11-23 07:45:38,inactivation_attempt_on_already_inactive,3,SN2003,8e102ae4f7d0450aa2c9041e2b95f621,string,system,machine_already_inactive
+2025-11-23 07:45:59,activate_machine,3,SN2003,,reactivacion_manual,system,string
+2025-11-23 07:46:09,activation_attempt_on_already_active,3,SN2003,,,system,string
+2025-11-23 07:46:25,activation_attempt_on_already_active,3,SN2003,,,system,string
+2025-11-23 07:46:33,activation_attempt_on_already_active,2,SN2002,,,system,string
+2025-11-23 07:46:46,inactivate_machine,2,SN2002,878a29f2ff3349babcd9e87c5ba1eae0,string,system,
+2025-11-23 07:46:55,inactivation_attempt_on_already_inactive,2,SN2002,0e4ec413c7f741268a08e05ca91abbec,string,system,machine_already_inactive
+2025-11-23 07:47:12,activate_machine,2,SN2002,,reactivacion_manual,system,string
+2025-11-23 07:47:21,inactivate_machine,2,SN2002,ea4f78339c0841a0aa4f45254a6c7229,string,system,
+2025-11-23 07:47:34,activate_machine,2,SN2002,,reactivacion_manual,system,string
+2025-11-23 08:03:21,inactivate_machine,3,SN2003,27a3101ded1249b699370a7a4e7cfc10,string,system,
+2025-11-23 08:03:32,inactivation_attempt_on_already_inactive,3,SN2003,724a85e0e88e4667a1bab7c5b633b14d,string,system,machine_already_inactive
+2025-11-23 08:03:59,activate_machine,3,SN2003,,reactivacion_manual,system,string
+2025-11-23 08:04:02,activation_attempt_on_already_active,3,SN2003,,,system,string
+2025-11-23 08:07:47,inactivate_machine,7,string,3b87802cb3124885a32fc949a6dfee4b,string,system,
+2025-11-23 08:07:54,inactivation_attempt_on_already_inactive,7,string,42f3bc0b4add4e5987b00bc7ef0545e3,string,system,machine_already_inactive
+2025-11-23 08:08:06,activate_machine,7,string,,reactivacion_manual,system,string
+2025-11-23 21:36:55,activate_machine,1,SN2001,,reactivacion_manual,system,xd
+2025-11-23 22:37:19,inactivate_machine,1,SN2001,94f42b175d534603a731cd4a37bf5fd1,xd,system,
+2025-11-23 22:39:53,inactivation_attempt_on_already_inactive,1,SN2001,ed0548059dd54fc6a76fa334ac0f865e,h,system,machine_already_inactive
+2025-11-23 22:40:19,activate_machine,1,SN2001,,reactivacion_manual,system,string
+2025-11-23 22:41:24,inactivate_machine,2,SN2002,d5c67c15e8ed4f5d93ebd1647a6c3466,string,system,
+2025-11-24 03:32:46,inactivate_machine,1,CNB234,cbebeec55ae5453d96c8938414be5acb,string,X,
+2025-11-24 03:34:19,activate_machine,1,CNB234,,reactivacion_manual,Juan,string
+2025-11-24 03:53:42,inactivate_machine,1,SN4001,ec50015b76214b80a6135b0a2716da3a,Porque si,Juan,
+2025-11-24 03:54:38,activate_machine,1,SN4001,,reactivacion_manual,Juan,Just Because
+2025-11-25 01:54:05,activation_attempt_on_already_active,2,12345,,,admin,si
+2025-11-25 01:54:47,inactivate_machine,2,12345,9818a406107b460a89b1cd77429d79ce,string,system,
+2025-11-25 01:55:13,activate_machine,2,12345,,reactivacion_manual,admin,si
+2025-11-25 02:41:37,inactivate_machine,4,string,84818386a5024aedaae46c1f18305cf1,string,system,
+2025-11-26 06:29:13,inactivate_machine,6,asasss,9b499ba951ea4bc086bb9bed2808e425,Inactivación manual desde front,user1,

@@ -25,18 +25,30 @@ def _read_df() -> pd.DataFrame:
         df = pd.read_csv(CSV_PATH)
     else:
         df = pd.DataFrame(columns=EXPECTED_COLUMNS)
+
     # Asegurar columnas completas
     for col in EXPECTED_COLUMNS:
         if col not in df.columns:
             df[col] = None
+
+    # 🔥 NORMALIZACIÓN DE DATOS PARA LOGIN 🔥
+    df["username"] = df["username"].astype(str).str.strip().str.lower()
+    df["password"] = df["password"].astype(str).str.strip()
+
+    # Normalizar booleanos
+    df["is_active"] = df["is_active"].astype(str).str.lower()
+
     return df[EXPECTED_COLUMNS]
-  
-def _to_bool(value: Any) -> bool:
-    return str(value).lower() == "true"
-  
+
 def _write_df(df: pd.DataFrame) -> None:
+    """Escribir DataFrame al CSV respetando el orden de columnas."""
     df.to_csv(CSV_PATH, index=False)
 
+def _to_bool(value: Any) -> bool:
+    """Convertir un valor a booleano."""
+    if isinstance(value, bool):
+        return value
+    return str(value).lower() == "true"
 
 def next_id() -> int:
     df = _read_df()
@@ -46,9 +58,11 @@ def next_id() -> int:
     ids = [int(x) for x in df["id"].dropna().tolist() if str(x).strip() != ""]
     return (max(ids) + 1) if ids else 1
 
-def username_exists(username: str) -> bool:
+def username_exists(username: str, exclude_id: Optional[int] = None) -> bool:
     df = _read_df()
     subset = df[(df["username"] == username) & (df["is_deleted"].astype(str).str.lower() != "true")]
+    if exclude_id is not None:
+        subset = subset[subset["id"] != exclude_id]
     return not subset.empty
 
 def insert_user(row: Dict[str, Any]) -> Dict[str, Any]:
@@ -61,7 +75,7 @@ def insert_user(row: Dict[str, Any]) -> Dict[str, Any]:
 
 def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
     df = _read_df()
-    subset = df[df["username"] == username]
+    subset = df[df["username"] == username.strip().lower()]
     if subset.empty:
         return None
     user = subset.iloc[0].to_dict()
@@ -87,7 +101,8 @@ def update_user_row(user_id: int, cambios: Dict[str, Any]) -> Optional[Dict[str,
         return None
     i = idx[0]
 
-    allowed_cols = {"username", "password", "role", "is_active", "updated_at", "updated_by"}
+    allowed_cols = {"username", "password", "role", "is_active", "updated_at", "updated_by", 
+                    "is_deleted", "deleted_at", "deleted_by"}
     for k, v in cambios.items():
         if k in allowed_cols:
             df.at[i, k] = v
