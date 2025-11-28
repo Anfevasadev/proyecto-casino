@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import MachineCard from '../components/MachineCard'
 import CreateMachineForm from '../components/CreateMachineForm'
+import EditMachineForm from '../components/EditMachineForm'
 import client from '../api/client'
 
 /**
@@ -19,6 +20,17 @@ export default function CasinoMachines() {
   const [error, setError] = useState('') // Mensajes de error globales
   const [showCreateForm, setShowCreateForm] = useState(false) // Control del modal de creación
   const [togglingSerial, setTogglingSerial] = useState('') // Serial que se está activando/inactivando
+  const [sessionUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch (err) {
+      console.warn("No fue posible parsear el usuario", err);
+      return null;
+    }
+  });
+  const isAdmin = sessionUser?.role === "admin" || sessionUser?.role === "soporte";
+  const [availableCasinos, setAvailableCasinos] = useState([])
+  const [editingMachine, setEditingMachine] = useState(null)
 
   const storedUser = (() => {
     // Se intenta recuperar el usuario autenticado para registrar al actor en los logs
@@ -36,11 +48,32 @@ export default function CasinoMachines() {
   const fetchCasino = useCallback(async () => {
     setLoadingCasino(true)
     try {
-      const { data } = await client.get('/places/casino', { params: { only_active: true } })
-      const found = Array.isArray(data) ? data.find((item) => Number(item.id) === Number(casinoId)) : null
+      const [activeResponse, inactiveResponse] = await Promise.all([
+        client.get('/places/casino', { params: { only_active: true } }),
+        client.get('/places/casino', { params: { only_active: false } })
+      ])
+
+      const normalize = (response) => Array.isArray(response?.data) ? response.data : []
+      const map = new Map()
+      ;[...normalize(activeResponse), ...normalize(inactiveResponse)].forEach((place) => {
+        if (place?.id == null) return
+        map.set(place.id, place)
+      })
+
+      const combined = Array.from(map.values())
+      const isPlaceActive = (value) => {
+        if (typeof value === 'boolean') return value
+        if (typeof value === 'string') return value.toLowerCase() === 'true'
+        return Boolean(value)
+      }
+      setAvailableCasinos(combined.filter((place) => isPlaceActive(place?.estado)))
+
+      const found = combined.find((item) => Number(item.id) === Number(casinoId))
       setCasino(found || null)
       if (!found) {
         setError('Casino no encontrado')
+      } else {
+        setError('')
       }
     } catch (err) {
       setError(err.message || 'No fue posible obtener el casino')
@@ -53,28 +86,48 @@ export default function CasinoMachines() {
   const fetchMachines = useCallback(async () => {
     setLoadingMachines(true)
     setError('')
+
+    const extractList = (payload) => (
+      Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.machines)
+          ? payload.machines
+          : Array.isArray(payload?.items)
+            ? payload.items
+            : []
+    )
+
     try {
+      if (isAdmin) {
+        const [activeResponse, inactiveResponse] = await Promise.all([
+          client.get('/machines/', { params: { only_active: true, casino_id: casinoId } }),
+          client.get('/machines/', { params: { only_active: false, casino_id: casinoId } })
+        ])
+
+        const combinedMap = new Map()
+        ;[...extractList(activeResponse?.data), ...extractList(inactiveResponse?.data)].forEach((machine) => {
+          if (machine?.id == null) return
+          combinedMap.set(machine.id, machine)
+        })
+        const combinedList = Array.from(combinedMap.values())
+        setMachines(combinedList)
+        return combinedList
+      }
+
       const { data } = await client.get('/machines/', {
         params: { only_active: true, casino_id: casinoId }
       })
-
-      const list =
-        Array.isArray(data)
-          ? data
-          : Array.isArray(data?.machines)
-            ? data.machines
-            : Array.isArray(data?.items)
-              ? data.items
-              : []
-
+      const list = extractList(data)
       setMachines(list)
+      return list
     } catch (err) {
       setError(err.message || 'No fue posible obtener las máquinas')
       setMachines([])
+      return []
     } finally {
       setLoadingMachines(false)
     }
-  }, [casinoId])
+  }, [casinoId, isAdmin])
 
   useEffect(() => {
     fetchCasino()
@@ -90,8 +143,8 @@ export default function CasinoMachines() {
     navigate('/casinos')
   }
 
-  const handleToggleStatus = async (machine) => {
-    if (!machine) return
+  const handleToggleStatus = async (machine, options = {}) => {
+    if (!machine || !isAdmin) return
     setTogglingSerial(machine.serial)
     try {
       const endpoint = machine.estado ? '/machines/inactivate' : '/machines/activate'
@@ -102,12 +155,26 @@ export default function CasinoMachines() {
           ? 'Inactivación manual desde front'
           : 'Reactivación manual desde front'
       })
-      await fetchMachines()
+      const updatedList = await fetchMachines()
+      if (options.keepModalOpen) {
+        const refreshed = updatedList.find((item) => Number(item.id) === Number(machine.id))
+        setEditingMachine(refreshed || null)
+      }
     } catch (err) {
       setError(err.message || 'No se pudo actualizar el estado de la máquina')
     } finally {
       setTogglingSerial('')
     }
+  }
+
+  const handleOpenEdit = (machine) => {
+    if (!isAdmin) return
+    setEditingMachine(machine)
+  }
+
+  const handleMachineUpdated = async () => {
+    await fetchMachines()
+    setEditingMachine(null)
   }
 
   if (loadingCasino) {
@@ -167,9 +234,9 @@ export default function CasinoMachines() {
         <h2>Máquinas registradas</h2>
         <p>📍 {casino.direccion}</p>
         <p className="casino-description">Código interno: {casino.codigo_casino}</p>
-        <button className="create-casino-btn" onClick={() => setShowCreateForm(true)}>
+        {isAdmin &&  <button className="create-casino-btn" onClick={() => setShowCreateForm(true)}>
           + Registrar máquina
-        </button>
+        </button>}
       </div>
 
       {error && (
@@ -189,7 +256,8 @@ export default function CasinoMachines() {
               <MachineCard
                 key={machine.id}
                 machine={machine}
-                onToggleStatus={handleToggleStatus}
+                canManage={isAdmin}
+                onEdit={handleOpenEdit}
               />
             ))}
           </div>
@@ -201,12 +269,22 @@ export default function CasinoMachines() {
         )}
       </div>
 
-      {showCreateForm && (
+      {showCreateForm && isAdmin && (
         <CreateMachineForm
           casinoId={casino.id}
           casinoNombre={casino.nombre}
           onClose={() => setShowCreateForm(false)}
           onCreated={fetchMachines}
+        />
+      )}
+
+      {isAdmin && editingMachine && (
+        <EditMachineForm
+          machine={editingMachine}
+          casinos={availableCasinos}
+          onClose={() => setEditingMachine(null)}
+          onUpdated={handleMachineUpdated}
+          onToggleStatus={(machine) => handleToggleStatus(machine, { keepModalOpen: true })}
         />
       )}
     </div>

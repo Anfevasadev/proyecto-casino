@@ -6,7 +6,7 @@
  * Muestra los campos exigidos por el requerimiento y expone un botón para
  * activar/inactivar la máquina mediante el callback recibido.
  */
-export default function MachineCard({ machine, onToggleStatus }) {
+export default function MachineCard({ machine, canManage = false, onEdit }) {
   if (!machine) {
     return null
   }
@@ -39,13 +39,15 @@ export default function MachineCard({ machine, onToggleStatus }) {
         <span className="machine-card__status" style={{ backgroundColor: statusColor }}>
           {statusLabel}
         </span>
-        <button
-          type="button"
-          className="machine-card__action-btn"
-          onClick={() => onToggleStatus?.(machine)}
-        >
-          {isActive ? 'Inactivar' : 'Activar'}
-        </button>
+        {canManage && (
+          <button
+            type="button"
+            className="machine-card__action-btn"
+            onClick={() => onEdit?.(machine)}
+          >
+            Editar
+          </button>
+        )}
       </footer>
     </article>
   )
@@ -62,5 +64,6 @@ export default function MachineCard({ machine, onToggleStatus }) {
 //     estado: PropTypes.bool.isRequired,
 //     casino_id: PropTypes.number.isRequired
 //   }),
-//   onToggleStatus: PropTypes.func
+//   canManage: PropTypes.bool,
+//   onEdit: PropTypes.func
 // }
