@@ -266,7 +266,7 @@ def actualizar_maquina_endpoint(machine_id: int, cambios: MachineUpdate, actor: 
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
-
+@router.post("/inactivate", response_model=MachineOut)
 def inactivate_machine(payload: SerialAction, user=Depends(verificar_rol(["admin","soporte"]))):
     try:
         result = inactivar_maquina_por_serial(
