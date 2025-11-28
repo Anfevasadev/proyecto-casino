@@ -50,18 +50,13 @@ def create_user(user_in: UserIn, created_by: str = "system"):
     if users_repo.username_exists(user_in.username):
         raise ValueError("El username ya está en uso")
 
-    # Hash password before persisting
-    from passlib.context import CryptContext
-
-    pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    hashed = pwd.hash(user_in.password)
 
     new_id = users_repo.next_id()
     now = _clock()
     row = {
         "id": new_id,
         "username": user_in.username,
-        "password": hashed,
+        "password": user_in.password,
         "role": user_in.role.value,
         "is_active": user_in.is_active,
         "is_deleted": False,

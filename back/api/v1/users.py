@@ -88,12 +88,12 @@ def _clock_local() -> str:
 
 
 @router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def create_user_endpoint(user: UserIn, _: dict = Depends(verificar_rol(["admin"]))):
-    try:
-        new_user = create_user(user, created_by="system")
-        return new_user
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+def create_user_endpoint(user: UserIn):
+	try:
+		new_user = create_user(user, created_by="system")
+		return new_user
+	except ValueError as e:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.delete("/{user_id}", status_code=status.HTTP_200_OK)
 def delete_user(user_id: int = Path(..., ge=1), _: dict = Depends(verificar_rol(["admin"]))):
